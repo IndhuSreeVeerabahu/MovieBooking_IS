@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Database Connection & Data Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Movies API</h3>
+        <button onclick="testMoviesAPI()">Test Movies API</button>
+        <div id="movies-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Theaters API</h3>
+        <button onclick="testTheatersAPI()">Test Theaters API</button>
+        <div id="theaters-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Shows API</h3>
+        <button onclick="testShowsAPI()">Test Shows API</button>
+        <div id="shows-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Users API</h3>
+        <button onclick="testUsersAPI()">Test Users API</button>
+        <div id="users-result"></div>
+    </div>
+
+    <script>
+        async function testMoviesAPI() {
+            const resultDiv = document.getElementById('movies-result');
+            resultDiv.innerHTML = '<p class="info">Testing...</p>';
+            
+            try {
+                const response = await fetch('/api/movies');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Movies API Working! Found ${data.length} movies</p>
+                        <ul>
+                            ${data.slice(0, 5).map(movie => `
+                                <li><strong>${movie.title}</strong> - ${movie.genre} - Currently Showing: ${movie.isCurrentlyShowing ? 'Yes' : 'No'}</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No movies found</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testTheatersAPI() {
+            const resultDiv = document.getElementById('theaters-result');
+            resultDiv.innerHTML = '<p class="info">Testing...</p>';
+            
+            try {
+                const response = await fetch('/api/theaters');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Theaters API Working! Found ${data.length} theaters</p>
+                        <ul>
+                            ${data.map(theater => `
+                                <li><strong>${theater.name}</strong> - ${theater.city}, ${theater.state}</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No theaters found</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testShowsAPI() {
+            const resultDiv = document.getElementById('shows-result');
+            resultDiv.innerHTML = '<p class="info">Testing...</p>';
+            
+            try {
+                const response = await fetch('/api/shows');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Shows API Working! Found ${data.length} shows</p>
+                        <ul>
+                            ${data.slice(0, 5).map(show => `
+                                <li><strong>${show.movie?.title}</strong> - ${show.theater?.name} - ${show.showTime}</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No shows found</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testUsersAPI() {
+            const resultDiv = document.getElementById('users-result');
+            resultDiv.innerHTML = '<p class="info">Testing...</p>';
+            
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Users API Working! Found ${data.length} users</p>
+                        <ul>
+                            ${data.map(user => `
+                                <li><strong>${user.firstName} ${user.lastName}</strong> - ${user.email} - ${user.role}</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No users found</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

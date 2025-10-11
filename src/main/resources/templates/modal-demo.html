@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal System Demo - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/validation.css">
+    <link rel="stylesheet" href="/css/modal-system.css">
+    <script src="/js/form-validation.js"></script>
+    <script src="/js/modal-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .demo-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .demo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(248, 68, 100, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative z-10 bg-bms-gray border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/movies" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/movies" class="text-gray-300 hover:text-white transition-colors">Back to Movies</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-white mb-4">Professional Modal System Demo</h1>
+            <p class="text-xl text-gray-300">Experience our beautiful, animated modals that replace browser alerts</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Alert Modals -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Alert Modals</h3>
+                <div class="space-y-3">
+                    <button onclick="showInfoModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Info Alert
+                    </button>
+                    <button onclick="showSuccessModal()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Success Alert
+                    </button>
+                    <button onclick="showWarningModal()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Warning Alert
+                    </button>
+                    <button onclick="showErrorModal()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Error Alert
+                    </button>
+                </div>
+            </div>
+
+            <!-- Confirmation Modals -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Confirmation Modals</h3>
+                <div class="space-y-3">
+                    <button onclick="showConfirmModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Basic Confirm
+                    </button>
+                    <button onclick="showDeleteConfirm()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Delete Confirmation
+                    </button>
+                    <button onclick="showBookingConfirm()" class="w-full bg-bms-red hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        Booking Confirmation
+                    </button>
+                </div>
+            </div>
+
+            <!-- Special Modals -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Special Modals</h3>
+                <div class="space-y-3">
+                    <button onclick="showLoadingModal()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Loading Modal
+                    </button>
+                    <button onclick="showPaymentSuccess()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Payment Success
+                    </button>
+                    <button onclick="showNetworkError()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Network Error
+                    </button>
+                </div>
+            </div>
+
+            <!-- Auto-close Modals -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Auto-close Modals</h3>
+                <div class="space-y-3">
+                    <button onclick="showAutoCloseInfo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Auto-close Info (3s)
+                    </button>
+                    <button onclick="showAutoCloseSuccess()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Auto-close Success (5s)
+                    </button>
+                    <button onclick="showToastNotification()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Toast Notification
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Buttons -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Custom Buttons</h3>
+                <div class="space-y-3">
+                    <button onclick="showCustomButtons()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Custom Button Actions
+                    </button>
+                    <button onclick="showContactModal()" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Contact Support
+                    </button>
+                    <button onclick="showHelpModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Help & FAQ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Browser Alert Comparison -->
+            <div class="demo-card rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Browser Alert vs Modal</h3>
+                <div class="space-y-3">
+                    <button onclick="showBrowserAlert()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Browser Alert (Old)
+                    </button>
+                    <button onclick="showProfessionalModal()" class="w-full bg-bms-red hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        Professional Modal (New)
+                    </button>
+                    <div class="text-sm text-gray-400 mt-4">
+                        <p>Compare the difference between the old browser alert and our new professional modal system.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="mt-16 demo-card rounded-lg p-8">
+            <h2 class="text-2xl font-bold text-white mb-6">Modal System Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Fast & Smooth</h3>
+                    <p class="text-gray-400 text-sm">Beautiful animations and transitions for a professional feel</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-green-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Accessible</h3>
+                    <p class="text-gray-400 text-sm">Keyboard navigation, screen reader support, and focus management</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-purple-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Customizable</h3>
+                    <p class="text-gray-400 text-sm">Multiple types, custom buttons, and flexible configuration</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-red-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Responsive</h3>
+                    <p class="text-gray-400 text-sm">Works perfectly on desktop, tablet, and mobile devices</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Demo functions for different modal types
+        
+        function showInfoModal() {
+            window.modalSystem.showAlert(
+                'This is an informational modal. It provides important information to the user in a clean, professional format.',
+                {
+                    title: 'Information',
+                    type: 'info'
+                }
+            );
+        }
+        
+        function showSuccessModal() {
+            window.modalSystem.showSuccess(
+                'Your action was completed successfully! The changes have been saved and you can continue with your workflow.',
+                {
+                    title: 'Success!'
+                }
+            );
+        }
+        
+        function showWarningModal() {
+            window.modalSystem.showWarning(
+                'Please be careful with this action. Make sure you understand the consequences before proceeding.',
+                {
+                    title: 'Warning'
+                }
+            );
+        }
+        
+        function showErrorModal() {
+            window.modalSystem.showError(
+                'Something went wrong! Please check your input and try again. If the problem persists, contact support.',
+                {
+                    title: 'Error Occurred'
+                }
+            );
+        }
+        
+        function showConfirmModal() {
+            window.modalSystem.showConfirm(
+                'Are you sure you want to proceed with this action? This cannot be undone.',
+                {
+                    title: 'Confirm Action',
+                    onConfirm: () => {
+                        window.modalSystem.showSuccess('Action confirmed and executed successfully!');
+                    }
+                }
+            );
+        }
+        
+        function showDeleteConfirm() {
+            window.modalSystem.showConfirm(
+                'Are you sure you want to delete this item? This action cannot be undone and all associated data will be permanently removed.',
+                {
+                    title: 'Delete Confirmation',
+                    type: 'error',
+                    buttons: [
+                        {
+                            text: 'Cancel',
+                            class: 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'close'
+                        },
+                        {
+                            text: 'Delete',
+                            class: 'bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'confirm'
+                        }
+                    ],
+                    onConfirm: () => {
+                        window.modalSystem.showSuccess('Item deleted successfully!');
+                    }
+                }
+            );
+        }
+        
+        function showBookingConfirm() {
+            window.modalSystem.showBookingConfirmation({
+                id: 'BK' + Math.random().toString(36).substr(2, 9).toUpperCase()
+            });
+        }
+        
+        function showLoadingModal() {
+            const loadingId = window.modalSystem.showLoading(
+                'Processing your request... Please wait while we complete the operation.',
+                {
+                    title: 'Please Wait'
+                }
+            );
+            
+            // Simulate loading completion
+            setTimeout(() => {
+                window.modalSystem.closeModal(loadingId);
+                window.modalSystem.showSuccess('Operation completed successfully!');
+            }, 3000);
+        }
+        
+        function showPaymentSuccess() {
+            window.modalSystem.showPaymentSuccess(1250);
+        }
+        
+        function showNetworkError() {
+            window.modalSystem.showNetworkError();
+        }
+        
+        function showAutoCloseInfo() {
+            window.modalSystem.showAlert(
+                'This modal will automatically close in 3 seconds. Perfect for notifications that don\'t require user interaction.',
+                {
+                    title: 'Auto-close Info',
+                    type: 'info',
+                    autoClose: true,
+                    autoCloseDelay: 3000
+                }
+            );
+        }
+        
+        function showAutoCloseSuccess() {
+            window.modalSystem.showSuccess(
+                'Your changes have been saved automatically. This notification will disappear in 5 seconds.',
+                {
+                    title: 'Auto-saved',
+                    autoClose: true,
+                    autoCloseDelay: 5000
+                }
+            );
+        }
+        
+        function showToastNotification() {
+            window.modalSystem.showAlert(
+                'This is a toast-style notification that appears briefly to inform users of important updates.',
+                {
+                    title: 'Notification',
+                    type: 'info',
+                    autoClose: true,
+                    autoCloseDelay: 4000
+                }
+            );
+        }
+        
+        function showCustomButtons() {
+            window.modalSystem.showAlert(
+                'This modal has custom buttons with different actions. You can configure buttons to perform specific tasks.',
+                {
+                    title: 'Custom Actions',
+                    buttons: [
+                        {
+                            text: 'Save Draft',
+                            class: 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'close'
+                        },
+                        {
+                            text: 'Continue',
+                            class: 'bg-bms-red hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'confirm'
+                        }
+                    ],
+                    onConfirm: () => {
+                        window.modalSystem.showSuccess('Action completed with custom button!');
+                    }
+                }
+            );
+        }
+        
+        function showContactModal() {
+            window.modalSystem.showAlert(
+                'Need help? Our support team is available 24/7 to assist you with any questions or issues.',
+                {
+                    title: 'Contact Support',
+                    buttons: [
+                        {
+                            text: 'Email Support',
+                            class: 'bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'confirm'
+                        },
+                        {
+                            text: 'Live Chat',
+                            class: 'bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'close'
+                        },
+                        {
+                            text: 'Close',
+                            class: 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'close'
+                        }
+                    ],
+                    onConfirm: () => {
+                        window.open('mailto:support@moviehub.com', '_blank');
+                    }
+                }
+            );
+        }
+        
+        function showHelpModal() {
+            window.modalSystem.showAlert(
+                'Welcome to MovieHub! Here you can find answers to common questions and learn how to use our platform effectively.',
+                {
+                    title: 'Help & FAQ',
+                    buttons: [
+                        {
+                            text: 'View FAQ',
+                            class: 'bg-bms-red hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'confirm'
+                        },
+                        {
+                            text: 'Close',
+                            class: 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                            action: 'close'
+                        }
+                    ],
+                    onConfirm: () => {
+                        window.modalSystem.showInfo('FAQ page would open here in a real application.');
+                    }
+                }
+            );
+        }
+        
+        function showBrowserAlert() {
+            // This will show the old browser alert
+            window.originalAlert('This is the old browser alert. Notice how it looks basic and doesn\'t match our app\'s design.');
+        }
+        
+        function showProfessionalModal() {
+            window.modalSystem.showAlert(
+                'This is our new professional modal! Notice how it matches our app\'s design, has smooth animations, and provides a much better user experience.',
+                {
+                    title: 'Professional Modal',
+                    type: 'success'
+                }
+            );
+        }
+    </script>
+</body>
+</html>

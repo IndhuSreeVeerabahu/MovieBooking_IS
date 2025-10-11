@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative bg-bms-gray/80 backdrop-blur-lg border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-white hover:text-bms-red transition-colors">Dashboard</a>
+                    <a href="/bookings" class="text-white hover:text-bms-red transition-colors">My Bookings</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <!-- Failure Card -->
+            <div class="bg-bms-gray rounded-2xl shadow-2xl p-8 border border-gray-700 text-center">
+                <!-- Failure Icon -->
+                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-500/20 mb-6">
+                    <svg class="h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+
+                <!-- Status Message -->
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-white mb-2">Payment Failed</h1>
+                    <p class="text-gray-400" th:text="${message}">
+                        Your payment could not be processed. Please try again or use a different payment method.
+                    </p>
+                </div>
+
+                <!-- Order ID if available -->
+                <div th:if="${orderId != null}" class="bg-bms-light-gray rounded-lg p-4 mb-6">
+                    <p class="text-sm text-gray-400">Order ID:</p>
+                    <p class="text-white font-mono" th:text="${orderId}">ORDER_123456789</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <a href="/booking" 
+                       class="w-full bg-bms-red hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block">
+                        Try Again
+                    </a>
+                    <a href="/movies" 
+                       class="w-full border border-bms-red text-bms-red hover:bg-bms-red hover:text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block">
+                        Browse Movies
+                    </a>
+                </div>
+
+                <!-- Support Information -->
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <p class="text-gray-400 text-sm mb-2">
+                        Having trouble with payment?
+                    </p>
+                    <p class="text-gray-400 text-sm">
+                        Contact our support team at 
+                        <a href="mailto:support@moviehub.com" class="text-bms-red hover:text-red-400">support@moviehub.com</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Common Issues -->
+            <div class="bg-bms-gray rounded-lg p-6 border border-gray-700">
+                <h3 class="text-lg font-semibold text-white mb-4">Common Payment Issues</h3>
+                <ul class="space-y-2 text-sm text-gray-400">
+                    <li class="flex items-start">
+                        <span class="text-bms-red mr-2">•</span>
+                        Insufficient funds in your account
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-bms-red mr-2">•</span>
+                        Incorrect card details or CVV
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-bms-red mr-2">•</span>
+                        Card expired or blocked
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-bms-red mr-2">•</span>
+                        Network connectivity issues
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Elements -->
+    <div class="fixed top-10 left-10 w-20 h-20 bg-bms-red/10 rounded-full blur-xl"></div>
+    <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
+</body>
+</html>

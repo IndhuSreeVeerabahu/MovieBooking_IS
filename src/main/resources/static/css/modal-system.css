@@ -1,0 +1,375 @@
+/**
+ * Professional Modal System Styles
+ * Provides beautiful, animated modals to replace browser alerts
+ */
+
+/* Modal Container */
+#modal-container {
+    z-index: 2000;
+}
+
+/* Ensure modal system respects z-index hierarchy */
+.modal-backdrop {
+    z-index: 1999;
+}
+
+.modal-content {
+    z-index: 2000;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+    transition: opacity 0.3s ease;
+}
+
+/* Modal Content */
+.modal-content {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Modal Header */
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+/* Modal Icon */
+.modal-icon {
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Close Button */
+.modal-close {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Body */
+.modal-body {
+    line-height: 1.6;
+}
+
+.modal-message {
+    font-size: 0.95rem;
+    word-wrap: break-word;
+}
+
+/* Modal Footer */
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Buttons */
+.modal-button {
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    min-width: 80px;
+}
+
+.modal-button:focus {
+    outline: 2px solid rgba(248, 68, 100, 0.5);
+    outline-offset: 2px;
+}
+
+.modal-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-button:active {
+    transform: translateY(0);
+}
+
+/* Button Variants */
+.modal-button.primary {
+    background: linear-gradient(135deg, #F84464, #FF6B6B);
+    color: white;
+    border: none;
+}
+
+.modal-button.primary:hover {
+    background: linear-gradient(135deg, #E53E3E, #F56565);
+}
+
+.modal-button.secondary {
+    background-color: #4A5568;
+    color: white;
+    border: 1px solid #718096;
+}
+
+.modal-button.secondary:hover {
+    background-color: #2D3748;
+    border-color: #4A5568;
+}
+
+.modal-button.danger {
+    background-color: #E53E3E;
+    color: white;
+    border: none;
+}
+
+.modal-button.danger:hover {
+    background-color: #C53030;
+}
+
+.modal-button.success {
+    background-color: #38A169;
+    color: white;
+    border: none;
+}
+
+.modal-button.success:hover {
+    background-color: #2F855A;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Modal Animations */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+}
+
+@keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes backdropFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Modal Entrance Animation */
+.modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-backdrop {
+    animation: backdropFadeIn 0.3s ease-out;
+}
+
+/* Modal Exit Animation */
+.modal-content.closing {
+    animation: modalSlideOut 0.3s ease-in;
+}
+
+.modal-backdrop.closing {
+    animation: backdropFadeOut 0.3s ease-in;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .modal-content {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    .modal-title {
+        font-size: 1.125rem;
+    }
+    
+    .modal-message {
+        font-size: 0.875rem;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+        space-x: 0;
+        gap: 0.75rem;
+    }
+    
+    .modal-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .modal-content {
+        border: 2px solid #ffffff;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        border-color: #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .modal-content,
+    .modal-backdrop,
+    .modal-button {
+        animation: none;
+        transition: none;
+    }
+    
+    .modal-button:hover {
+        transform: none;
+    }
+}
+
+/* Dark theme adjustments */
+.dark .modal-content {
+    background-color: #1a1a1a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .modal-header,
+.dark .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar for modal content */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Focus management */
+.modal-content:focus {
+    outline: none;
+}
+
+/* Accessibility improvements */
+.modal-content[role="dialog"] {
+    outline: none;
+}
+
+.modal-content[aria-modal="true"] {
+    position: relative;
+}
+
+/* Print styles */
+@media print {
+    .modal-backdrop,
+    .modal-content {
+        display: none !important;
+    }
+}
+
+/* Custom modal types */
+.modal-content.confirmation {
+    border-left: 4px solid #F59E0B;
+}
+
+.modal-content.success {
+    border-left: 4px solid #10B981;
+}
+
+.modal-content.error {
+    border-left: 4px solid #EF4444;
+}
+
+.modal-content.info {
+    border-left: 4px solid #3B82F6;
+}
+
+/* Toast-style notifications */
+.modal-content.toast {
+    max-width: 400px;
+    margin: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content.toast .modal-header {
+    padding: 1rem 1rem 0.5rem 1rem;
+    border-bottom: none;
+}
+
+.modal-content.toast .modal-body {
+    padding: 0.5rem 1rem;
+}
+
+.modal-content.toast .modal-footer {
+    padding: 0.5rem 1rem 1rem 1rem;
+    border-top: none;
+}
+
+/* Progress bar for loading modals */
+.modal-progress {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.modal-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #F84464, #FF6B6B);
+    border-radius: 2px;
+    animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+}

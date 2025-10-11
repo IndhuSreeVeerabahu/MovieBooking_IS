@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf?.token ?: ''}">
+    <meta name="_csrf_header" th:content="${_csrf?.headerName ?: ''}">
+    <meta name="user-id" th:content="${userId ?: ''}">
+    <title>Book Tickets - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/validation.css">
+    <link rel="stylesheet" href="/css/modal-system.css">
+    <script src="/js/form-validation.js"></script>
+    <script src="/js/modal-system.js"></script>
+    <script src="/js/notification-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .glass-effect {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .seat {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 600;
+            border: 2px solid transparent;
+        }
+        
+        .seat.available {
+            background: #374151;
+            color: white;
+            border-color: #6B7280;
+        }
+        
+        .seat.available:hover {
+            background: #4B5563;
+            border-color: #9CA3AF;
+            transform: scale(1.1);
+        }
+        
+        .seat.selected {
+            background: #F84464;
+            color: white;
+            border-color: #F84464;
+            transform: scale(1.1);
+        }
+        
+        .seat.booked {
+            background: #DC2626;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .seat.locked {
+            background: #F59E0B;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        
+        .seat.premium {
+            background: linear-gradient(45deg, #8B5CF6, #A855F7);
+            color: white;
+        }
+        
+        .seat.vip {
+            background: linear-gradient(45deg, #F59E0B, #F97316);
+            color: white;
+        }
+        
+        .screen {
+            background: linear-gradient(90deg, #1F2937, #374151, #1F2937);
+            height: 4px;
+            border-radius: 2px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .screen::before {
+            content: 'SCREEN';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #9CA3AF;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .booking-summary {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+        }
+        
+        .timer {
+            background: linear-gradient(45deg, #F84464, #FF6B6B);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg" data-user-id="${userId}">
+    <!-- Navigation -->
+    <nav class="relative z-10 glass-effect border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/movies" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
+                        <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
+                    </div>
+                    <div class="relative" style="z-index: 99999 !important;">
+                        <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
+                            <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">U</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                            <a href="/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Movies</a>
+                            <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
+                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Profile</a>
+                            <div th:if="${user.role == T(com.example.MovieTicketBooking.entity.User$Role).ADMIN}">
+                                <hr class="my-1 border-gray-600">
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-bms-red hover:bg-bms-light-gray hover:text-white font-medium">
+                                    Admin Dashboard
+                                </a>
+                            </div>
+                            <hr class="my-1 border-gray-600">
+                            <form th:action="@{/logout}" method="post" class="block">
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
+                                    Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Movie Info -->
+        <div class="booking-summary rounded-lg p-6 mb-8">
+            <div class="flex items-center space-x-6">
+                <img id="moviePoster" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iI0Y4NDQ2NCIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+TW92aWU8L3RleHQ+Cjwvc3ZnPg==" 
+                     alt="Movie Poster" class="w-20 h-30 object-cover rounded-lg">
+                <div class="flex-1">
+                    <h1 id="movieTitle" class="text-2xl font-bold text-white mb-2">Movie Title</h1>
+                    <div class="flex items-center space-x-4 text-gray-300 text-sm">
+                        <span id="theaterName">Theater Name</span>
+                        <span>•</span>
+                        <span id="screenName">Screen 1</span>
+                        <span>•</span>
+                        <span id="showDateTime">Today, 7:00 PM</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div id="timer" class="timer mb-2">15:00</div>
+                    <p class="text-gray-400 text-sm">Time remaining</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Seat Selection -->
+            <div class="lg:col-span-2">
+                <div class="booking-summary rounded-lg p-6">
+                    <h2 class="text-xl font-semibold text-white mb-6">Select Seats</h2>
+                    
+                    <!-- Screen -->
+                    <div class="screen"></div>
+                    
+                    <!-- Seat Layout -->
+                    <div id="seatLayout" class="space-y-4">
+                        <!-- Seats will be loaded here -->
+                        <div class="text-center py-8 text-gray-400">
+                            <div class="flex items-center justify-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-bms-red"></div>
+                                <span class="ml-2">Loading seats...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seat Legend -->
+                    <div class="mt-8 flex flex-wrap items-center justify-center space-x-6 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <div class="seat available"></div>
+                            <span class="text-gray-300">Available</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="seat selected"></div>
+                            <span class="text-gray-300">Selected</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="seat booked"></div>
+                            <span class="text-gray-300">Booked</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="seat locked"></div>
+                            <span class="text-gray-300">Locked</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="seat premium"></div>
+                            <span class="text-gray-300">Premium</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="seat vip"></div>
+                            <span class="text-gray-300">VIP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Summary -->
+            <div class="lg:col-span-1">
+                <div class="booking-summary rounded-lg p-6 sticky top-8">
+                    <h3 class="text-lg font-semibold text-white mb-4">Booking Summary</h3>
+                    
+                    <!-- Selected Seats -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-300 mb-2">Selected Seats</h4>
+                        <div id="selectedSeats" class="text-white">
+                            <p class="text-gray-400">No seats selected</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-300 mb-2">Price Breakdown</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Base Price</span>
+                                <span class="text-white" id="basePrice">₹0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Booking Fee</span>
+                                <span class="text-white" id="bookingFee">₹0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Tax (18%)</span>
+                                <span class="text-white" id="taxAmount">₹0</span>
+                            </div>
+                            <hr class="border-gray-600">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-white">Total</span>
+                                <span class="text-bms-red" id="totalAmount">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Book Now Button -->
+                    <button id="bookNowBtn" onclick="proceedToPayment()" 
+                            class="w-full bg-bms-red hover:bg-red-600 text-white py-3 px-4 rounded-lg transition-colors font-semibold disabled:bg-gray-600 disabled:cursor-not-allowed"
+                            disabled>
+                        Book Now
+                    </button>
+                    
+                    <!-- Terms -->
+                    <p class="text-xs text-gray-400 mt-4 text-center">
+                        By proceeding, you agree to our terms and conditions
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-bms-gray rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-semibold text-white mb-4">Complete Payment</h3>
+            <p class="text-gray-300 mb-4">Choose your payment method:</p>
+            
+            <form id="paymentForm" data-validation="true">
+                <div class="space-y-3 mb-6">
+                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
+                        <input type="radio" name="paymentMethod" value="card" class="mr-3" required>
+                        <span class="text-white">Credit/Debit Card</span>
+                    </label>
+                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
+                        <input type="radio" name="paymentMethod" value="upi" class="mr-3" required>
+                        <span class="text-white">UPI</span>
+                    </label>
+                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
+                        <input type="radio" name="paymentMethod" value="netbanking" class="mr-3" required>
+                        <span class="text-white">Net Banking</span>
+                    </label>
+                </div>
+                <div id="paymentMethodError" class="hidden mb-4 text-sm text-red-400">Please select a payment method</div>
+                
+                <div class="flex space-x-4">
+                    <button type="button" onclick="closePaymentModal()" 
+                            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 bg-bms-red hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        Pay Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentShowId = null;
+        let selectedSeats = [];
+        let seatLockId = null;
+        let lockExpiryTime = null;
+        let timerInterval = null;
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const button = event.target.closest('button');
+            const menuElement = event.target.closest('#userMenu');
+            
+            if (menu && !button && !menuElement) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Load seat layout from API
+        async function loadSeatLayout() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const showId = urlParams.get('showId');
+            
+            if (!showId) {
+                window.modalSystem.showError(
+                    'No show selected. Please go back and select a showtime.',
+                    {
+                        title: 'No Show Selected',
+                        onConfirm: () => {
+                            window.location.href = '/movies';
+                        }
+                    }
+                );
+                return;
+            }
+            
+            currentShowId = showId;
+            
+            try {
+                // Load show details
+                console.log('Loading show details for showId:', showId);
+                const showResponse = await fetch(`/api/shows/${showId}`);
+                if (!showResponse.ok) {
+                    throw new Error('Failed to fetch show details');
+                }
+                const show = await showResponse.json();
+                console.log('Show details loaded:', show);
+                
+                // Update movie info
+                updateMovieInfo(show);
+                
+                // Load seat layout
+                console.log('Loading seat layout for showId:', showId);
+                const seatResponse = await fetch(`/api/booking/shows/${showId}/seats`);
+                console.log('Seat response status:', seatResponse.status);
+                
+                if (!seatResponse.ok) {
+                    const errorText = await seatResponse.text();
+                    console.error('Seat layout API error:', errorText);
+                    throw new Error(`Failed to fetch seat layout: ${errorText}`);
+                }
+                const seatLayout = await seatResponse.json();
+                console.log('Seat layout loaded:', seatLayout);
+                
+                displaySeatsFromLayout(seatLayout);
+            } catch (error) {
+                console.error('Error loading seat layout:', error);
+                
+                // Fallback to mock data with Indian pricing
+                const mockSeats = [
+                    { id: 1, rowNumber: 1, seatNumber: 1, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 2, rowNumber: 1, seatNumber: 2, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 3, rowNumber: 1, seatNumber: 3, seatType: 'STANDARD', price: 250, isAvailable: false, isBooked: true, isLocked: false },
+                    { id: 4, rowNumber: 1, seatNumber: 4, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 5, rowNumber: 1, seatNumber: 5, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 6, rowNumber: 2, seatNumber: 1, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 7, rowNumber: 2, seatNumber: 2, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 8, rowNumber: 2, seatNumber: 3, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 9, rowNumber: 2, seatNumber: 4, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 10, rowNumber: 2, seatNumber: 5, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 11, rowNumber: 3, seatNumber: 1, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 12, rowNumber: 3, seatNumber: 2, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 13, rowNumber: 3, seatNumber: 3, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 14, rowNumber: 3, seatNumber: 4, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
+                    { id: 15, rowNumber: 3, seatNumber: 5, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false }
+                ];
+                
+                displaySeats(mockSeats);
+            }
+        }
+        
+        function updateMovieInfo(show) {
+            document.getElementById('movieTitle').textContent = show.movieTitle || 'Movie Title';
+            document.getElementById('theaterName').textContent = show.theaterName || 'Theater Name';
+            document.getElementById('screenName').textContent = show.screenName || 'Screen 1';
+            
+            const showDate = new Date(show.showDate);
+            const showTime = showDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            const showDateStr = showDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            document.getElementById('showDateTime').textContent = `${showDateStr}, ${showTime}`;
+        }
+        
+        function displaySeatsFromLayout(seatLayout) {
+            console.log('Displaying seat layout:', seatLayout);
+            const seatLayoutDiv = document.getElementById('seatLayout');
+            let html = '';
+            
+            if (!seatLayout || !seatLayout.seatRows || seatLayout.seatRows.length === 0) {
+                console.error('No seat rows found in layout:', seatLayout);
+                html = '<div class="text-center text-red-400 py-8">No seats available for this show</div>';
+                seatLayoutDiv.innerHTML = html;
+                return;
+            }
+            
+            seatLayout.seatRows.forEach(row => {
+                console.log('Processing row:', row);
+                html += `<div class="flex items-center justify-center space-x-2 mb-2">`;
+                html += `<span class="text-gray-300 text-sm font-medium w-6">${row.rowLetter}</span>`;
+                
+                row.seats.forEach(seat => {
+                    const seatClass = getSeatClassFromStatus(seat.status);
+                    const price = getSeatPrice(seat.seatType, seatLayout);
+                    
+                    html += `<div class="seat ${seatClass}" onclick="selectSeat(${seat.seatId}, ${price}, '${seat.seatType}')" data-seat-id="${seat.seatId}">${seat.seatNumber}</div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            console.log('Generated HTML:', html);
+            seatLayoutDiv.innerHTML = html;
+        }
+        
+        function getSeatClassFromStatus(status) {
+            switch (status) {
+                case 'BOOKED': return 'booked';
+                case 'LOCKED': return 'locked';
+                case 'AVAILABLE': return 'available';
+                default: return 'available';
+            }
+        }
+        
+        function getSeatPrice(seatType, seatLayout) {
+            // Indian pricing based on seat type
+            switch (seatType) {
+                case 'PREMIUM': return 350;
+                case 'VIP': return 500;
+                default: return 250;
+            }
+        }
+
+        function displaySeats(seats) {
+            const seatLayout = document.getElementById('seatLayout');
+            const rows = [...new Set(seats.map(seat => seat.rowNumber))].sort();
+            
+            let html = '';
+            rows.forEach(rowNumber => {
+                const rowSeats = seats.filter(seat => seat.rowNumber === rowNumber);
+                html += `<div class="flex items-center justify-center space-x-2 mb-2">`;
+                html += `<span class="text-gray-300 text-sm font-medium w-6">${String.fromCharCode(64 + rowNumber)}</span>`;
+                
+                rowSeats.forEach(seat => {
+                    const seatClass = getSeatClass(seat);
+                    html += `<div class="seat ${seatClass}" onclick="selectSeat(${seat.id}, ${seat.price}, '${seat.seatType}')" data-seat-id="${seat.id}">${seat.seatNumber}</div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            seatLayout.innerHTML = html;
+        }
+
+        function getSeatClass(seat) {
+            if (seat.isBooked) return 'booked';
+            if (seat.isLocked) return 'locked';
+            if (seat.seatType === 'PREMIUM') return 'premium available';
+            if (seat.seatType === 'VIP') return 'vip available';
+            return 'available';
+        }
+
+        function selectSeat(seatId, price, seatType) {
+            const seatElement = document.querySelector(`[data-seat-id="${seatId}"]`);
+            
+            if (seatElement.classList.contains('booked') || seatElement.classList.contains('locked')) {
+                return;
+            }
+            
+            if (seatElement.classList.contains('selected')) {
+                // Deselect seat
+                seatElement.classList.remove('selected');
+                selectedSeats = selectedSeats.filter(seat => seat.id !== seatId);
+            } else {
+                // Select seat
+                seatElement.classList.add('selected');
+                selectedSeats.push({ id: seatId, price: price, seatType: seatType });
+            }
+            
+            updateBookingSummary();
+        }
+
+        function updateBookingSummary() {
+            const selectedSeatsDiv = document.getElementById('selectedSeats');
+            const bookNowBtn = document.getElementById('bookNowBtn');
+            
+            if (selectedSeats.length === 0) {
+                selectedSeatsDiv.innerHTML = '<p class="text-gray-400">No seats selected</p>';
+                bookNowBtn.disabled = true;
+                return;
+            }
+            
+            // Update selected seats display
+            const seatIdentifiers = selectedSeats.map(seat => {
+                const rowNumber = Math.ceil(seat.id / 5); // Mock calculation
+                const seatNumber = ((seat.id - 1) % 5) + 1;
+                return `${String.fromCharCode(64 + rowNumber)}${seatNumber}`;
+            }).join(', ');
+            
+            selectedSeatsDiv.innerHTML = `<p class="text-white">${seatIdentifiers}</p>`;
+            
+            // Update price breakdown with Indian pricing
+            const basePrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
+            const bookingFee = Math.round(basePrice * 0.05); // 5% booking fee (Indian standard)
+            const taxAmount = Math.round((basePrice + bookingFee) * 0.18); // 18% GST
+            const totalAmount = basePrice + bookingFee + taxAmount;
+            
+            document.getElementById('basePrice').textContent = `₹${basePrice}`;
+            document.getElementById('bookingFee').textContent = `₹${bookingFee}`;
+            document.getElementById('taxAmount').textContent = `₹${taxAmount}`;
+            document.getElementById('totalAmount').textContent = `₹${totalAmount}`;
+            
+            bookNowBtn.disabled = false;
+        }
+
+        function proceedToPayment() {
+            if (selectedSeats.length === 0) {
+                window.modalSystem.showWarning(
+                    'Please select at least one seat before proceeding to payment.',
+                    {
+                        title: 'No Seats Selected'
+                    }
+                );
+                return;
+            }
+            
+            // Lock seats first
+            lockSeats();
+        }
+
+        async function lockSeats() {
+            const seatIds = selectedSeats.map(seat => seat.id);
+            
+            try {
+                // Lock seats using the API
+                const lockResponse = await fetch('/api/booking/seats/lock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCSRFToken()
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        showId: currentShowId,
+                        seatIds: seatIds,
+                        userId: getCurrentUserId()
+                    })
+                });
+                
+                if (!lockResponse.ok) {
+                    throw new Error('Failed to lock seats');
+                }
+                
+                const lockData = await lockResponse.json();
+                currentLockId = lockData.lockId;
+                lockExpiryTime = new Date(lockData.expiresAt);
+                
+                // Start timer
+                startTimer();
+                
+                // Show payment modal
+                document.getElementById('paymentModal').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error locking seats:', error);
+                window.notificationSystem.error(
+                    'Unable to reserve the selected seats. Please try again or select different seats.',
+                    {
+                        title: 'Seat Reservation Failed',
+                        duration: 6000
+                    }
+                );
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const timeLeft = lockExpiryTime - now;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    window.modalSystem.showSeatExpired();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
+                
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        async function processPayment() {
+            // Validate payment form first
+            const paymentForm = document.getElementById('paymentForm');
+            if (!window.formValidator.validateForm('paymentForm')) {
+                return;
+            }
+            
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            
+            try {
+                // Show loading state
+                const payButton = document.querySelector('button[onclick="processPayment()"]');
+                const originalText = payButton.textContent;
+                payButton.textContent = 'Processing...';
+                payButton.disabled = true;
+                
+                // First, create the booking
+                const bookingData = {
+                    userId: getCurrentUserId(),
+                    showId: currentShowId,
+                    lockId: currentLockId,
+                    totalAmount: calculateTotalAmount(),
+                    bookingFee: 50.00,
+                    taxAmount: calculateTaxAmount()
+                };
+                
+                const bookingResponse = await fetch('/api/booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCSRFToken()
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(bookingData)
+                });
+                
+                if (!bookingResponse.ok) {
+                    throw new Error('Failed to create booking');
+                }
+                
+                const booking = await bookingResponse.json();
+                
+                // Close payment modal
+                closePaymentModal();
+                
+                // Redirect to payment page for Cashfree integration
+                window.location.href = `/payment/${booking.id}`;
+                
+            } catch (error) {
+                console.error('Payment processing error:', error);
+                window.modalSystem.showError(
+                    'Payment failed. Please check your payment details and try again.',
+                    {
+                        title: 'Payment Failed',
+                        buttons: [
+                            {
+                                text: 'Try Again',
+                                class: 'bg-bms-red hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                                action: 'confirm'
+                            },
+                            {
+                                text: 'Cancel',
+                                class: 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors',
+                                action: 'close'
+                            }
+                        ],
+                        onConfirm: () => {
+                            // Reset button state and retry
+                            const payButton = document.querySelector('button[type="submit"]');
+                            payButton.textContent = 'Pay Now';
+                            payButton.disabled = false;
+                        }
+                    }
+                );
+                
+                // Reset button state
+                const payButton = document.querySelector('button[type="submit"]');
+                payButton.textContent = 'Pay Now';
+                payButton.disabled = false;
+            }
+        }
+        
+        // Helper functions
+        function getCurrentUserId() {
+            // Get user ID from the page data (passed from server)
+            const userElement = document.querySelector('[data-user-id]');
+            let userId = userElement ? parseInt(userElement.getAttribute('data-user-id')) : null;
+            
+            // If not found in data attribute, try to get from meta tag
+            if (!userId) {
+                const metaUserId = document.querySelector('meta[name="user-id"]');
+                userId = metaUserId ? parseInt(metaUserId.getAttribute('content')) : null;
+            }
+            
+            // If still not found, try to get from global variable
+            if (!userId && window.currentUserId) {
+                userId = window.currentUserId;
+            }
+            
+            console.log('Current User ID:', userId);
+            
+            if (!userId) {
+                console.error('User ID not found! User may not be logged in.');
+                window.modalSystem.showError(
+                    'You must be logged in to book tickets. Please login and try again.',
+                    {
+                        title: 'Login Required',
+                        onConfirm: () => {
+                            window.location.href = '/login';
+                        }
+                    }
+                );
+            }
+            
+            return userId;
+        }
+        
+        function getAuthToken() {
+            // For Spring Security, we don't need a token for form submissions
+            // The authentication is handled by the session
+            return null;
+        }
+        
+        function getCSRFToken() {
+            // Get CSRF token for Spring Security
+            const token = document.querySelector('meta[name="_csrf"]');
+            return token ? token.getAttribute('content') : '';
+        }
+        
+        function calculateTotalAmount() {
+            // Calculate total amount based on selected seats with Indian pricing
+            const selectedSeats = document.querySelectorAll('.seat.selected');
+            return selectedSeats.length * 300; // Average Indian price per seat
+        }
+        
+        function calculateTaxAmount() {
+            const totalAmount = calculateTotalAmount();
+            return totalAmount * 0.18; // 18% GST
+        }
+
+        // Load seat layout on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSeatLayout();
+        });
+    </script>
+</body>
+</html>

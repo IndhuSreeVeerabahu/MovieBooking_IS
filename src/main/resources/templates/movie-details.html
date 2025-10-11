@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${movie.title + ' - MovieHub'}">Movie Details - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/validation.css">
+    <script src="/js/notification-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .glass-effect {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .movie-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(248, 68, 100, 0.3);
+        }
+        
+        .theater-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .theater-card:hover {
+            border-color: rgba(248, 68, 100, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .showtime-btn {
+            background: linear-gradient(135deg, #374151 0%, #4B5563 100%);
+            border: 1px solid #6B7280;
+            transition: all 0.2s ease;
+        }
+        
+        .showtime-btn:hover {
+            background: linear-gradient(135deg, #F84464 0%, #FF6B6B 100%);
+            border-color: #F84464;
+            transform: scale(1.05);
+        }
+        
+        .showtime-btn.selected {
+            background: linear-gradient(135deg, #F84464 0%, #FF6B6B 100%);
+            border-color: #F84464;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative glass-effect border-b border-gray-700" style="z-index: 100 !important;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/movies" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/movies" class="text-white hover:text-bms-red transition-colors font-medium">Movies</a>
+                    <a href="/theaters" class="text-gray-300 hover:text-white transition-colors">Theaters</a>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4" th:if="${user != null}">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
+                        <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
+                    </div>
+                    <div class="relative" style="z-index: 99999 !important;">
+                        <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
+                            <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm" th:text="${user.firstName != null ? user.firstName.substring(0,1) : 'U'}">U</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Profile</a>
+                            <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
+                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Settings</a>
+                            <div th:if="${user.role == T(com.example.MovieTicketBooking.entity.User$Role).ADMIN}">
+                                <hr class="my-1 border-gray-600">
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-bms-red hover:bg-bms-light-gray hover:text-white font-medium">
+                                    Admin Dashboard
+                                </a>
+                            </div>
+                            <hr class="my-1 border-gray-600">
+                            <form th:action="@{/logout}" method="post" class="block">
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
+                                    Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Login/Register buttons when user is not logged in -->
+                <div class="flex items-center space-x-4" th:if="${user == null}">
+                    <a href="/login" class="text-white hover:text-bms-red transition-colors font-medium">Login</a>
+                    <a href="/register" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Register</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style="z-index: 1 !important;">
+        <!-- Movie Info Section -->
+        <div class="movie-card rounded-lg p-8 mb-8">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Movie Poster -->
+                <div class="lg:w-1/3">
+                    <img th:src="${movie.posterUrl}" 
+                         th:alt="${movie.title}" 
+                         class="w-full h-auto rounded-lg shadow-2xl"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iIzJBMkEyQSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gUG9zdGVyPC90ZXh0Pgo8L3N2Zz4='">
+                </div>
+                
+                <!-- Movie Details -->
+                <div class="lg:w-2/3">
+                    <h1 class="text-4xl font-bold text-white mb-4" th:text="${movie.title}">Movie Title</h1>
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-6">
+                        <span class="bg-bms-red text-white px-3 py-1 rounded-full text-sm font-medium" th:text="${movie.rating}">PG-13</span>
+                        <span class="text-gray-300" th:text="${movie.genre}">Action</span>
+                        <span class="text-gray-300" th:text="${movie.language}">English</span>
+                        <span class="text-gray-300" th:text="${movie.durationMinutes + ' min'}">120 min</span>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-white mb-2">Synopsis</h3>
+                        <p class="text-gray-300 leading-relaxed" th:text="${movie.description}">Movie description goes here...</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-400 mb-1">Director</h4>
+                            <p class="text-white" th:text="${movie.director}">Director Name</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-400 mb-1">Cast</h4>
+                            <p class="text-white" th:text="${movie.cast}">Cast Members</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-400 mb-1">Release Date</h4>
+                            <p class="text-white" th:text="${#temporals.format(movie.releaseDate, 'MMM dd, yyyy')}">Jan 01, 2024</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-400 mb-1">End Date</h4>
+                            <p class="text-white" th:text="${#temporals.format(movie.endDate, 'MMM dd, yyyy')}">Mar 01, 2024</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theater and Show Selection -->
+        <div class="movie-card rounded-lg p-6">
+            <h2 class="text-2xl font-bold text-white mb-6">Select Theater & Showtime</h2>
+            
+            <!-- City Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Select City</label>
+                <select id="citySelect" class="w-full md:w-64 px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                    <option value="">Choose a city...</option>
+                </select>
+            </div>
+            
+            <!-- Date Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Select Date</label>
+                <input type="date" id="dateSelect" class="px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+            </div>
+            
+            <!-- Theaters and Shows -->
+            <div id="theatersContainer">
+                <div class="text-center py-12 text-gray-400">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-bms-red"></div>
+                        <span class="ml-2">Select a city and date to view theaters and showtimes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentMovieId = null;
+        let selectedShowId = null;
+        let theaters = [];
+        let shows = [];
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const button = event.target.closest('button');
+            const menuElement = event.target.closest('#userMenu');
+            
+            if (menu && !button && !menuElement) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Load cities
+        async function loadCities() {
+            try {
+                const response = await fetch('/api/theaters');
+                const theatersData = await response.json();
+                
+                const cities = [...new Set(theatersData.map(theater => theater.city))].sort();
+                const citySelect = document.getElementById('citySelect');
+                
+                citySelect.innerHTML = '<option value="">Choose a city...</option>';
+                cities.forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading cities:', error);
+            }
+        }
+
+        // Load theaters and shows for selected city and date
+        async function loadTheatersAndShows() {
+            const city = document.getElementById('citySelect').value;
+            const date = document.getElementById('dateSelect').value;
+            
+            if (!city || !date) {
+                return;
+            }
+
+            const theatersContainer = document.getElementById('theatersContainer');
+            theatersContainer.innerHTML = `
+                <div class="text-center py-8 text-gray-400">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-bms-red"></div>
+                        <span class="ml-2">Loading theaters and showtimes...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Get theaters for the city
+                const theatersResponse = await fetch(`/api/theaters/city/${encodeURIComponent(city)}`);
+                const theatersData = await theatersResponse.json();
+                
+                if (theatersData.length === 0) {
+                    theatersContainer.innerHTML = `
+                        <div class="text-center py-12 text-gray-400">
+                            <p class="text-xl">No theaters found in ${city}</p>
+                            <p class="text-sm">Try selecting a different city</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Get shows for each theater
+                const theatersWithShows = [];
+                for (const theater of theatersData) {
+                    try {
+                        const showsResponse = await fetch(`/api/shows/movie/${currentMovieId}/theater/${theater.id}`);
+                        const theaterShows = await showsResponse.json();
+                        
+                        // Filter shows for the selected date
+                        const selectedDate = new Date(date);
+                        const filteredShows = theaterShows.filter(show => {
+                            const showDate = new Date(show.showDate);
+                            return showDate.toDateString() === selectedDate.toDateString();
+                        });
+
+                        if (filteredShows.length > 0) {
+                            theatersWithShows.push({
+                                ...theater,
+                                shows: filteredShows
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error loading shows for theater ${theater.id}:`, error);
+                    }
+                }
+
+                displayTheatersAndShows(theatersWithShows);
+            } catch (error) {
+                console.error('Error loading theaters and shows:', error);
+                theatersContainer.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <p class="text-xl">Error loading theaters and showtimes</p>
+                        <p class="text-sm">Please try again later</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayTheatersAndShows(theatersWithShows) {
+            const theatersContainer = document.getElementById('theatersContainer');
+            
+            if (theatersWithShows.length === 0) {
+                theatersContainer.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <p class="text-xl">No showtimes available for the selected date</p>
+                        <p class="text-sm">Try selecting a different date</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            theatersWithShows.forEach(theater => {
+                html += `
+                    <div class="theater-card rounded-lg p-6 mb-6">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-semibold text-white mb-2">${theater.name}</h3>
+                                <p class="text-gray-400 text-sm">${theater.fullAddress}</p>
+                                <div class="flex items-center mt-2">
+                                    <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded mr-2">${theater.totalScreens} Screens</span>
+                                    ${theater.amenities ? `<span class="text-xs text-gray-400">${theater.amenities}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                `;
+                
+                theater.shows.forEach(show => {
+                    const showTime = new Date(show.showDate).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    html += `
+                        <button class="showtime-btn px-4 py-3 rounded-lg text-white font-medium text-sm"
+                                onclick="selectShowtime(${show.id}, '${theater.name}', '${show.screenName}', '${showTime}', ${show.basePrice})">
+                            <div class="text-center">
+                                <div class="font-semibold">${showTime}</div>
+                                <div class="text-xs text-gray-300 mt-1">${show.screenName}</div>
+                                <div class="text-xs text-gray-300">₹${show.basePrice}</div>
+                            </div>
+                        </button>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            theatersContainer.innerHTML = html;
+        }
+
+        function selectShowtime(showId, theaterName, screenName, showTime, price) {
+            // Remove previous selection
+            document.querySelectorAll('.showtime-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Add selection to clicked button
+            event.target.closest('.showtime-btn').classList.add('selected');
+            
+            selectedShowId = showId;
+            
+            // Show booking button
+            showBookingButton(theaterName, screenName, showTime, price);
+        }
+
+        function showBookingButton(theaterName, screenName, showTime, price) {
+            const theatersContainer = document.getElementById('theatersContainer');
+            
+            // Remove existing booking button if any
+            const existingButton = document.getElementById('bookingButton');
+            if (existingButton) {
+                existingButton.remove();
+            }
+            
+            // Create booking button
+            const bookingButton = document.createElement('div');
+            bookingButton.id = 'bookingButton';
+            bookingButton.className = 'mt-6 text-center';
+            bookingButton.innerHTML = `
+                <div class="bg-bms-red/20 border border-bms-red rounded-lg p-4 mb-4">
+                    <h4 class="text-white font-semibold mb-2">Selected Showtime</h4>
+                    <p class="text-gray-300 text-sm">${theaterName} • ${screenName} • ${showTime} • ₹${price}</p>
+                </div>
+                <button onclick="proceedToBooking()" 
+                        class="bg-bms-red hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors">
+                    Book Tickets
+                </button>
+            `;
+            
+            theatersContainer.appendChild(bookingButton);
+        }
+
+        function proceedToBooking() {
+            if (!selectedShowId) {
+                window.notificationSystem.warning(
+                    'Please select a showtime before proceeding to booking.',
+                    {
+                        title: 'Showtime Required',
+                        duration: 4000
+                    }
+                );
+                return;
+            }
+            
+            window.location.href = `/booking?showId=${selectedShowId}`;
+        }
+
+        // Event listeners
+        document.getElementById('citySelect').addEventListener('change', loadTheatersAndShows);
+        document.getElementById('dateSelect').addEventListener('change', loadTheatersAndShows);
+
+        // Set default date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateSelect').value = today;
+            
+            // Get movie ID from Thymeleaf template
+            currentMovieId = /*[[${movie.id}]]*/ 604; // Use actual movie ID from backend
+            
+            loadCities();
+        });
+
+    </script>
+</body>
+</html>

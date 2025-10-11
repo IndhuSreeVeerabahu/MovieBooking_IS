@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation - MovieHub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #F84464;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #F84464;
+            margin-bottom: 10px;
+        }
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #10B981;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .success-icon::before {
+            content: "✓";
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+        }
+        .booking-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .detail-value {
+            color: #212529;
+        }
+        .seats-info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .total-amount {
+            background-color: #F84464;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .important-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .important-info h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #F84464;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background-color: #e63946;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">MovieHub</div>
+            <div class="success-icon"></div>
+            <h1 style="color: #10B981; margin: 0;">Booking Confirmed!</h1>
+            <p style="margin: 10px 0 0 0; color: #6c757d;">Your movie tickets have been successfully booked</p>
+        </div>
+
+        <div class="booking-details">
+            <h2 style="color: #F84464; margin-top: 0;">Booking Details</h2>
+            
+            <div class="detail-row">
+                <span class="detail-label">Booking Reference:</span>
+                <span class="detail-value" th:text="${bookingReference}">BOOK123456</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Movie:</span>
+                <span class="detail-value" th:text="${movieTitle}">Movie Title</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Theater:</span>
+                <span class="detail-value" th:text="${theaterName}">Theater Name</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Screen:</span>
+                <span class="detail-value" th:text="${screenName}">Screen 1</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Date:</span>
+                <span class="detail-value" th:text="${showDate}">Friday, December 15, 2023</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Time:</span>
+                <span class="detail-value" th:text="${showTime}">7:00 PM</span>
+            </div>
+        </div>
+
+        <div class="seats-info">
+            <h3 style="margin-top: 0; color: #1976d2;">Seat Information</h3>
+            <p th:if="${seats != null and !seats.empty}">
+                <span th:each="seat, iterStat : ${seats}" 
+                      th:text="${seat.seat.getSeatIdentifier()} + (${iterStat.last} ? '' : ', ')">A1, A2</span>
+            </p>
+            <p th:if="${seats == null or seats.empty}">Seat information not available</p>
+        </div>
+
+        <div class="total-amount">
+            <div>Total Amount: ₹<span th:text="${totalAmount}">500.00</span></div>
+            <div style="font-size: 14px; margin-top: 5px;">
+                (Includes Booking Fee: ₹<span th:text="${bookingFee}">50.00</span> + Tax: ₹<span th:text="${taxAmount}">50.00</span>)
+            </div>
+        </div>
+
+        <div class="important-info">
+            <h3>Important Information</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li>Please arrive at the theater at least 15 minutes before the show time</li>
+                <li>Show your booking reference or QR code at the theater entrance</li>
+                <li>Keep this email as proof of booking</li>
+                <li>For any queries, contact our support team</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a th:href="${baseUrl} + '/bookings'" class="btn">View My Bookings</a>
+            <a th:href="${baseUrl} + '/movies'" class="btn">Browse More Movies</a>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing MovieHub!</p>
+            <p>This is an automated email. Please do not reply to this email.</p>
+            <p>For support, contact us at <a href="mailto:support@moviehub.com">support@moviehub.com</a></p>
+        </div>
+    </div>
+</body>
+</html>

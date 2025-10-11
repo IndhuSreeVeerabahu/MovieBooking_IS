@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Dropdown menu fixes - ULTRA HIGH PRIORITY */
+        .dropdown-menu {
+            position: fixed !important;
+            z-index: 2147483647 !important; /* Maximum z-index value */
+            background: #2A2A2A !important;
+            border: 1px solid #4A4A4A !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+            backdrop-filter: blur(10px) !important;
+            top: 60px !important;
+            right: 20px !important;
+        }
+        
+        /* Ensure dropdown container has maximum priority */
+        .relative {
+            position: relative !important;
+            z-index: 2147483646 !important; /* Just below dropdown */
+        }
+        
+        /* Force all other content to be below dropdown */
+        main {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        nav {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        /* Force all elements to be below dropdown */
+        * {
+            z-index: 1 !important;
+        }
+        
+        .dropdown-menu, .relative {
+            z-index: 2147483647 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="relative z-10 bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-white">Dropdown Test</h1>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-white font-medium">Test User</p>
+                        <p class="text-gray-400 text-sm">test@example.com</p>
+                    </div>
+                    <div class="relative">
+                        <button id="userMenuButton" class="flex items-center text-gray-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 rounded-full p-1">
+                            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm">T</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 hover:text-white transition-colors">Dashboard</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 hover:text-white transition-colors">Settings</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 hover:text-white transition-colors">Profile</a>
+                            <hr class="my-1 border-gray-600">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 hover:text-white transition-colors">Sign Out</a>
+                        </div>
+                        
+                        <!-- Backdrop overlay -->
+                        <div id="dropdownBackdrop" class="hidden fixed inset-0 bg-black bg-opacity-20" style="z-index: 2147483646 !important;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header with buttons that should be below dropdown -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Test Page</h2>
+                    <p class="text-gray-400">Testing dropdown overlap fix</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Test Button 1
+                    </button>
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Test Button 2
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content that should be below dropdown -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-white mb-4">Test Content</h3>
+            <p class="text-gray-300 mb-4">This content should be below the dropdown menu when it's open.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h4 class="text-white font-medium mb-2">Card 1</h4>
+                    <p class="text-gray-400">This card should be below the dropdown.</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h4 class="text-white font-medium mb-2">Card 2</h4>
+                    <p class="text-gray-400">This card should be below the dropdown.</p>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h4 class="text-white font-medium mb-2">Card 3</h4>
+                    <p class="text-gray-400">This card should be below the dropdown.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            const button = document.getElementById('userMenuButton');
+            const backdrop = document.getElementById('dropdownBackdrop');
+            
+            if (menu) {
+                menu.classList.toggle('hidden');
+                
+                // Show/hide backdrop
+                if (backdrop) {
+                    backdrop.classList.toggle('hidden');
+                }
+                
+                // Add visual feedback
+                if (menu.classList.contains('hidden')) {
+                    button.classList.remove('ring-2', 'ring-red-500');
+                } else {
+                    button.classList.add('ring-2', 'ring-red-500');
+                }
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const button = document.getElementById('userMenuButton');
+            const backdrop = document.getElementById('dropdownBackdrop');
+            const menuElement = event.target.closest('#userMenu');
+            const buttonElement = event.target.closest('#userMenuButton');
+            
+            if (menu && !buttonElement && !menuElement) {
+                menu.classList.add('hidden');
+                if (backdrop) {
+                    backdrop.classList.add('hidden');
+                }
+                button.classList.remove('ring-2', 'ring-red-500');
+            }
+        });
+
+        // Add event listener to the button
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('userMenuButton');
+            const backdrop = document.getElementById('dropdownBackdrop');
+            
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserMenu();
+                });
+            }
+            
+            // Close menu when clicking on backdrop
+            if (backdrop) {
+                backdrop.addEventListener('click', function() {
+                    const menu = document.getElementById('userMenu');
+                    const button = document.getElementById('userMenuButton');
+                    
+                    if (menu && !menu.classList.contains('hidden')) {
+                        menu.classList.add('hidden');
+                        backdrop.classList.add('hidden');
+                        button.classList.remove('ring-2', 'ring-red-500');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

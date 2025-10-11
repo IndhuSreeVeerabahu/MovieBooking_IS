@@ -1,0 +1,47 @@
+/**
+ * Admin UI Fixes - Minimal Z-Index Fixes Only
+ * Fixes specific overlap issues without breaking existing styling
+ */
+
+/* Proper z-index hierarchy */
+:root {
+    --z-dropdown: 1000;
+    --z-modal: 2000;
+    --z-modal-backdrop: 1999;
+}
+
+/* Fix dropdown positioning - only target the specific issue */
+#userMenu {
+    position: absolute !important;
+    z-index: var(--z-dropdown) !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+}
+
+/* When modal is open, hide dropdown */
+body.modal-open #userMenu {
+    display: none !important;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden !important;
+}
+
+/* Ensure modals are above everything */
+.modal,
+#addShowModal,
+#addTheaterModal,
+#movieModal {
+    z-index: var(--z-modal) !important;
+}
+
+/* Responsive adjustments for dropdown */
+@media (max-width: 768px) {
+    #userMenu {
+        right: -1rem !important;
+        width: 180px !important;
+    }
+}

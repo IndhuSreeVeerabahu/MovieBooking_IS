@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Payment - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <link rel="stylesheet" href="/css/validation.css">
+    <script src="/js/notification-system.js"></script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .payment-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .seat-selected {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        
+        .seat-available {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .seat-available:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .seat-booked {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .seat-locked {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .bms-red {
+            color: #f59e0b;
+        }
+        
+        .bg-bms-red {
+            background-color: #f59e0b;
+        }
+        
+        .hover\:bg-red-600:hover {
+            background-color: #dc2626;
+        }
+        
+        .bms-light-gray {
+            background-color: rgba(55, 65, 81, 0.8);
+        }
+        
+        .payment-method-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .payment-method-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .payment-method-card.selected {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #f59e0b;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg" data-user-id="${userId}">
+    <!-- Navigation -->
+    <nav class="relative z-10 glass-effect border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white">
+                        <span class="text-bms-red">Movie</span>Hub
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
+                        <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
+                    </div>
+                    <div class="relative" style="z-index: 99999 !important;">
+                        <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
+                            <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">U</span>
+                            </div>
+                        </button>
+                        
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-light-gray rounded-lg shadow-lg py-1 z-50">
+                            <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
+                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Profile</a>
+                            <div th:if="${user.role == T(com.example.MovieTicketBooking.entity.User$Role).ADMIN}">
+                                <hr class="my-1 border-gray-600">
+                                <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-bms-red hover:bg-bms-light-gray hover:text-white font-medium">
+                                    Admin Dashboard
+                                </a>
+                            </div>
+                            <hr class="my-1 border-gray-600">
+                            <a href="/logout" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Booking Summary -->
+            <div class="lg:col-span-1">
+                <div class="payment-card rounded-lg p-6 sticky top-8">
+                    <h2 class="text-2xl font-bold text-white mb-6">Booking Summary</h2>
+                    
+                    <!-- Movie Details -->
+                    <div class="mb-6">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <img th:src="${booking.show.movie.posterUrl}" 
+                                 th:alt="${booking.show.movie.title}" 
+                                 class="w-16 h-24 object-cover rounded-lg">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white" th:text="${booking.show.movie.title}">Movie Title</h3>
+                                <p class="text-gray-400 text-sm" th:text="${booking.show.movie.genre}">Action</p>
+                                <p class="text-gray-400 text-sm" th:text="${booking.show.movie.language}">Hindi</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Show Details -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Theater:</span>
+                            <span class="text-white" th:text="${booking.show.theater.name}">Theater Name</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Date:</span>
+                            <span class="text-white" th:text="${#temporals.format(booking.show.showDate, 'MMM dd, yyyy')}">Dec 25, 2024</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Time:</span>
+                            <span class="text-white" th:text="${#temporals.format(booking.show.showTime, 'HH:mm')}">18:30</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Screen:</span>
+                            <span class="text-white" th:text="'Screen ' + ${booking.show.screen.screenNumber}">Screen 1</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Seats -->
+                    <div class="mb-6">
+                        <h4 class="text-white font-semibold mb-2">Selected Seats</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span th:each="seat : ${booking.bookingSeats}" 
+                                  class="bg-bms-red text-white px-3 py-1 rounded-full text-sm"
+                                  th:text="${seat.seat.rowNumber} + ${seat.seat.seatNumber}">A1</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="border-t border-gray-600 pt-4">
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Base Price:</span>
+                                <span class="text-white" th:text="'₹' + ${booking.totalAmount}">₹500</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Booking Fee:</span>
+                                <span class="text-white">₹20</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Tax (18%):</span>
+                                <span class="text-white" th:text="'₹' + ${#numbers.formatDecimal(booking.totalAmount * 0.18, 1, 2)}">₹90</span>
+                            </div>
+                            <hr class="border-gray-600">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span class="text-white">Total Amount:</span>
+                                <span class="text-bms-red" th:text="'₹' + ${#numbers.formatDecimal(booking.totalAmount + 20 + (booking.totalAmount * 0.18), 1, 2)}">₹610</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Form -->
+            <div class="lg:col-span-2">
+                <div class="payment-card rounded-lg p-8">
+                    <h2 class="text-3xl font-bold text-white mb-8">Complete Your Payment</h2>
+                    
+                    <!-- Payment Methods -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-white mb-4">Choose Payment Method</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="payment-method-card selected border-2 border-bms-red rounded-lg p-4" data-method="cashfree">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                        <span class="text-white font-bold text-sm">CF</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-white font-semibold">Cashfree</h4>
+                                        <p class="text-gray-400 text-sm">UPI, Cards, Net Banking</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="payment-method-card border-2 border-gray-600 rounded-lg p-4" data-method="upi">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-bold text-sm">UPI</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-white font-semibold">UPI</h4>
+                                        <p class="text-gray-400 text-sm">Google Pay, PhonePe, Paytm</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Button -->
+                    <div class="text-center">
+                        <button id="payButton" 
+                                onclick="initiatePayment()"
+                                class="w-full bg-bms-red hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors duration-300 flex items-center justify-center space-x-2">
+                            <span id="payButtonText">Pay ₹<span th:text="${#numbers.formatDecimal(booking.totalAmount + 20 + (booking.totalAmount * 0.18), 1, 2)}">610</span></span>
+                            <div id="loadingSpinner" class="loading-spinner hidden"></div>
+                        </button>
+                        
+                        <p class="text-gray-400 text-sm mt-4">
+                            By proceeding, you agree to our Terms & Conditions and Privacy Policy
+                        </p>
+                    </div>
+                    
+                    <!-- Test Payment Buttons (for development) -->
+                    <div class="mt-8 pt-6 border-t border-gray-600">
+                        <h4 class="text-white font-semibold mb-4">Test Payment (Development Only)</h4>
+                        <div class="flex space-x-4">
+                            <form th:action="@{'/payment/test/success/' + ${booking.id}}" method="post" class="flex-1">
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                                    Test Success
+                                </button>
+                            </form>
+                            <form th:action="@{'/payment/test/fail/' + ${booking.id}}" method="post" class="flex-1">
+                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                                    Test Failure
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Payment method selection
+        document.querySelectorAll('.payment-method-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Cashfree Payment Integration
+        function initiatePayment() {
+            const payButton = document.getElementById('payButton');
+            const payButtonText = document.getElementById('payButtonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Show loading state
+            payButton.disabled = true;
+            payButtonText.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            
+            try {
+                // Initialize Cashfree
+                const cashfree = Cashfree({
+                    mode: "[[${environment}]]", // SANDBOX or PRODUCTION
+                });
+                
+                // Create order
+                const orderData = {
+                    order_id: "ORDER_" + [[${booking.id}]] + "_" + Date.now(),
+                    order_amount: [[${booking.totalAmount + 20 + (booking.totalAmount * 0.18)}]],
+                    order_currency: "INR",
+                    customer_details: {
+                        customer_id: [[${user.id}]],
+                        customer_name: "[[${user.firstName}]] [[${user.lastName}]]",
+                        customer_email: "[[${user.email}]]",
+                        customer_phone: "[[${user.phoneNumber}]]"
+                    },
+                    order_meta: {
+                        return_url: "[[${#httpServletRequest.scheme}]]://[[${#httpServletRequest.serverName}]]:[[${#httpServletRequest.serverPort}]]/payment/success",
+                        notify_url: "[[${#httpServletRequest.scheme}]]://[[${#httpServletRequest.serverName}]]:[[${#httpServletRequest.serverPort}]]/payment/webhook"
+                    },
+                    order_note: "Movie Ticket Booking - [[${booking.show.movie.title}]]"
+                };
+                
+                // For college project, simulate payment flow
+                // In production, you would use actual Cashfree SDK
+                setTimeout(() => {
+                    // Simulate successful payment
+                    window.location.href = `/payment/success?order_id=${orderData.order_id}&cf_payment_id=test_payment_${Date.now()}&payment_status=SUCCESS`;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Payment initiation failed:', error);
+                
+                // Reset button state
+                payButton.disabled = false;
+                payButtonText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                
+                window.notificationSystem.error(
+                    'Unable to initiate the payment process. Please check your payment details and try again.',
+                    {
+                        title: 'Payment Failed',
+                        duration: 6000
+                    }
+                );
+            }
+        }
+
+        // User menu toggle
+        function toggleUserMenu() {
+            const userMenu = document.getElementById('userMenu');
+            userMenu.classList.toggle('hidden');
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.getElementById('userMenu');
+            const userMenuButton = event.target.closest('[onclick="toggleUserMenu()"]');
+            
+            if (!userMenuButton && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

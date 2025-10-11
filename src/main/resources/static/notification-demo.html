@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Notification System Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/notification-system.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8 text-white">Professional Notification System Demo</h1>
+            <p class="text-center text-gray-400 mb-12">Beautiful, animated notifications for success, error, warning, and info messages</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Success Notifications -->
+                <div class="demo-card rounded-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-green-400">Success Notifications</h2>
+                    <div class="space-y-3">
+                        <button onclick="showSuccessDemo()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Show Success Notification
+                        </button>
+                        <button onclick="showBookingSuccess()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Booking Success Demo
+                        </button>
+                        <button onclick="showPaymentSuccess()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Payment Success Demo
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Error Notifications -->
+                <div class="demo-card rounded-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-red-400">Error Notifications</h2>
+                    <div class="space-y-3">
+                        <button onclick="showErrorDemo()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Show Error Notification
+                        </button>
+                        <button onclick="showNetworkError()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Network Error Demo
+                        </button>
+                        <button onclick="showDeleteError()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Delete Error Demo
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Warning Notifications -->
+                <div class="demo-card rounded-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-yellow-400">Warning Notifications</h2>
+                    <div class="space-y-3">
+                        <button onclick="showWarningDemo()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Show Warning Notification
+                        </button>
+                        <button onclick="showSeatExpired()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Seat Expired Demo
+                        </button>
+                        <button onclick="showMaintenanceWarning()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Maintenance Warning
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Info Notifications -->
+                <div class="demo-card rounded-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-400">Info Notifications</h2>
+                    <div class="space-y-3">
+                        <button onclick="showInfoDemo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Show Info Notification
+                        </button>
+                        <button onclick="showFeatureInfo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Feature Info Demo
+                        </button>
+                        <button onclick="showUpdateInfo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            Update Info Demo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Special Features -->
+            <div class="demo-card rounded-lg p-6 mt-8">
+                <h2 class="text-2xl font-semibold mb-4 text-purple-400">Special Features</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="showPersistentNotification()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Persistent Notification
+                    </button>
+                    <button onclick="showNotificationWithActions()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Notification with Actions
+                    </button>
+                    <button onclick="showMultipleNotifications()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Multiple Notifications
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Clear All -->
+            <div class="text-center mt-8">
+                <button onclick="clearAllNotifications()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    Clear All Notifications
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Demo functions
+        function showSuccessDemo() {
+            window.notificationSystem.success('Operation completed successfully!', {
+                title: 'Success',
+                duration: 4000
+            });
+        }
+        
+        function showBookingSuccess() {
+            window.notificationSystem.showBookingSuccess('BK-2024-001');
+        }
+        
+        function showPaymentSuccess() {
+            window.notificationSystem.showPaymentSuccess(1250);
+        }
+        
+        function showErrorDemo() {
+            window.notificationSystem.error('Something went wrong. Please try again.', {
+                title: 'Error',
+                duration: 6000
+            });
+        }
+        
+        function showNetworkError() {
+            window.notificationSystem.showNetworkError();
+        }
+        
+        function showDeleteError() {
+            window.notificationSystem.error('Cannot delete this item because it is currently in use.', {
+                title: 'Delete Failed',
+                duration: 8000
+            });
+        }
+        
+        function showWarningDemo() {
+            window.notificationSystem.warning('Please review your input before proceeding.', {
+                title: 'Warning',
+                duration: 5000
+            });
+        }
+        
+        function showSeatExpired() {
+            window.notificationSystem.showSeatExpired();
+        }
+        
+        function showMaintenanceWarning() {
+            window.notificationSystem.warning('System maintenance scheduled for tonight at 2:00 AM. Some features may be unavailable.', {
+                title: 'Maintenance Notice',
+                duration: 0, // Persistent
+                actions: [
+                    { id: 'acknowledge', text: 'Acknowledge', primary: true },
+                    { id: 'close', text: 'Close', primary: false }
+                ]
+            });
+        }
+        
+        function showInfoDemo() {
+            window.notificationSystem.info('This is an informational message.', {
+                title: 'Information',
+                duration: 4000
+            });
+        }
+        
+        function showFeatureInfo() {
+            window.notificationSystem.info('New feature available! Check out the enhanced booking system.', {
+                title: 'New Feature',
+                duration: 6000,
+                actions: [
+                    { id: 'learn', text: 'Learn More', primary: true },
+                    { id: 'close', text: 'Close', primary: false }
+                ]
+            });
+        }
+        
+        function showUpdateInfo() {
+            window.notificationSystem.info('Your app has been updated to version 2.1.0 with new features and bug fixes.', {
+                title: 'App Updated',
+                duration: 5000
+            });
+        }
+        
+        function showPersistentNotification() {
+            window.notificationSystem.warning('This notification will stay until you close it manually.', {
+                title: 'Persistent Notification',
+                duration: 0, // Never auto-hide
+                showCloseButton: true
+            });
+        }
+        
+        function showNotificationWithActions() {
+            window.notificationSystem.info('Would you like to save your changes?', {
+                title: 'Unsaved Changes',
+                duration: 0,
+                actions: [
+                    { id: 'save', text: 'Save', primary: true },
+                    { id: 'discard', text: 'Discard', primary: false },
+                    { id: 'cancel', text: 'Cancel', primary: false }
+                ]
+            });
+        }
+        
+        function showMultipleNotifications() {
+            window.notificationSystem.success('First notification', { title: 'Success 1', duration: 3000 });
+            setTimeout(() => {
+                window.notificationSystem.info('Second notification', { title: 'Info 1', duration: 3000 });
+            }, 500);
+            setTimeout(() => {
+                window.notificationSystem.warning('Third notification', { title: 'Warning 1', duration: 3000 });
+            }, 1000);
+            setTimeout(() => {
+                window.notificationSystem.error('Fourth notification', { title: 'Error 1', duration: 3000 });
+            }, 1500);
+        }
+        
+        function clearAllNotifications() {
+            window.notificationSystem.hideAll();
+        }
+        
+        // Show welcome notification on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                window.notificationSystem.info('Welcome to the Professional Notification System Demo! Click the buttons below to see different notification types.', {
+                    title: 'Welcome',
+                    duration: 6000
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

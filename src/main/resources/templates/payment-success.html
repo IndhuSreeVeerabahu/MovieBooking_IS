@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .success-animation {
+            animation: successPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .checkmark {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawCheckmark 1s ease-in-out forwards;
+        }
+        
+        @keyframes drawCheckmark {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative bg-bms-gray/80 backdrop-blur-lg border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-white hover:text-bms-red transition-colors">Dashboard</a>
+                    <a href="/bookings" class="text-white hover:text-bms-red transition-colors">My Bookings</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <!-- Success Card -->
+            <div class="bg-bms-gray rounded-2xl shadow-2xl p-8 border border-gray-700 text-center">
+                <!-- Success Icon -->
+                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-500/20 mb-6 success-animation">
+                    <svg class="h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path class="checkmark" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+
+                <!-- Status Message -->
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-white mb-2" th:text="${message}">Payment Successful!</h1>
+                    <p class="text-gray-400" th:if="${paymentStatus == 'SUCCESS'}">
+                        Your payment has been processed successfully. You will receive a confirmation email shortly.
+                    </p>
+                    <p class="text-yellow-400" th:if="${paymentStatus == 'PENDING'}">
+                        Your payment is being processed. Please wait for confirmation.
+                    </p>
+                    <p class="text-red-400" th:if="${paymentStatus == 'ERROR'}">
+                        There was an issue processing your payment. Please contact support.
+                    </p>
+                </div>
+
+                <!-- Booking Details -->
+                <div th:if="${booking != null}" class="bg-bms-light-gray rounded-lg p-4 mb-6 text-left">
+                    <h3 class="text-lg font-semibold text-white mb-3">Booking Details</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Booking ID:</span>
+                            <span class="text-white font-medium" th:text="${booking.id}">#12345</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Movie:</span>
+                            <span class="text-white font-medium" th:text="${booking.show.movie.title}">Movie Title</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Theater:</span>
+                            <span class="text-white font-medium" th:text="${booking.show.theater.name}">Theater Name</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Show Time:</span>
+                            <span class="text-white font-medium" th:text="${#temporals.format(booking.show.showTime, 'MMM dd, yyyy HH:mm')}">Dec 25, 2024 18:30</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Seats:</span>
+                            <span class="text-white font-medium" th:text="${#strings.listJoin(booking.bookingSeats.![seat.seatNumber], ', ')}">A1, A2</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Total Amount:</span>
+                            <span class="text-bms-red font-bold" th:text="'₹' + ${booking.totalAmount}">₹500</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-4">
+                    <div th:if="${paymentStatus == 'SUCCESS'}" class="space-y-3">
+                        <a href="/bookings" 
+                           class="w-full bg-bms-red hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block">
+                            View My Bookings
+                        </a>
+                        <a href="/movies" 
+                           class="w-full border border-bms-red text-bms-red hover:bg-bms-red hover:text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block">
+                            Book More Movies
+                        </a>
+                    </div>
+                    
+                    <div th:if="${paymentStatus == 'PENDING'}">
+                        <button onclick="checkPaymentStatus()" 
+                                class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            Check Payment Status
+                        </button>
+                    </div>
+                    
+                    <div th:if="${paymentStatus == 'ERROR'}">
+                        <a href="/booking" 
+                           class="w-full bg-bms-red hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-block">
+                            Try Again
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Support Information -->
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <p class="text-gray-400 text-sm">
+                        Need help? Contact our support team at 
+                        <a href="mailto:support@moviehub.com" class="text-bms-red hover:text-red-400">support@moviehub.com</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="text-center">
+                <p class="text-gray-500 text-sm">
+                    You will receive a confirmation email with your booking details and e-ticket.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Elements -->
+    <div class="fixed top-10 left-10 w-20 h-20 bg-bms-red/10 rounded-full blur-xl"></div>
+    <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
+
+    <script>
+        function checkPaymentStatus() {
+            // Simulate checking payment status
+            const button = document.querySelector('button');
+            button.textContent = 'Checking...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        // Auto-refresh if payment is pending
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentStatus = '[[${paymentStatus}]]';
+            if (paymentStatus === 'PENDING') {
+                setTimeout(() => {
+                    location.reload();
+                }, 10000); // Refresh every 10 seconds
+            }
+        });
+    </script>
+</body>
+</html>

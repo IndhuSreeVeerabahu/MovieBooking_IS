@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/validation.css">
+    <script src="/js/notification-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .bg-gradient-bms {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+        }
+        
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .glass-effect {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .success-animation {
+            animation: successPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .ticket-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.3);
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative z-10 glass-effect border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/movies" class="text-white hover:text-bms-red transition-colors font-medium">Movies</a>
+                    <a href="/bookings" class="text-white hover:text-bms-red transition-colors font-medium">My Bookings</a>
+                    <a href="/dashboard" class="text-white hover:text-bms-red transition-colors font-medium">Dashboard</a>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative" style="z-index: 99999 !important;">
+                        <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-bms-red transition-colors">
+                            <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-sm font-semibold" th:text="${user.firstName.charAt(0)}">U</span>
+                            </div>
+                            <span th:text="${user.firstName}">User</span>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-600" style="z-index: 99999 !important;">
+                            <div class="py-1">
+                                <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
+                                    Dashboard
+                                </a>
+                                <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
+                                    My Bookings
+                                </a>
+                                <hr class="my-1 border-gray-600">
+                                <form th:action="@{/logout}" method="post" class="block">
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
+                                        Sign Out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Success Header -->
+        <div class="text-center mb-12">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 success-animation">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold text-white mb-4">Booking Confirmed!</h1>
+            <p class="text-xl text-gray-300">Your movie tickets have been successfully booked</p>
+            <p class="text-sm text-gray-400 mt-2">Booking Reference: <span class="font-mono text-bms-red" th:text="${bookingReference}">BOOK123456</span></p>
+        </div>
+
+        <!-- Booking Details Card -->
+        <div class="ticket-card p-8 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Movie Info -->
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-6">Movie Details</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <img id="moviePoster" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNGODQ0NjQiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1vdmllPC90ZXh0Pgo8L3N2Zz4=" 
+                                 alt="Movie Poster" class="w-16 h-24 object-cover rounded-lg">
+                            <div>
+                                <h3 id="movieTitle" class="text-xl font-semibold text-white">Movie Title</h3>
+                                <p id="movieGenre" class="text-gray-400 text-sm">Action, Adventure</p>
+                                <p id="movieDuration" class="text-gray-400 text-sm">2h 30m</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Show Details -->
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-6">Show Details</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Theater:</span>
+                            <span id="theaterName" class="text-white font-medium">CineMax Theater</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Screen:</span>
+                            <span id="screenName" class="text-white font-medium">Screen 1</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Date & Time:</span>
+                            <span id="showDateTime" class="text-white font-medium">Today, 7:00 PM</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Seats:</span>
+                            <span id="seatNumbers" class="text-white font-medium">A1, A2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="ticket-card p-8 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-6">Payment Summary</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Ticket Price:</span>
+                    <span id="ticketPrice" class="text-white">₹800.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Booking Fee:</span>
+                    <span id="bookingFee" class="text-white">₹50.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Tax:</span>
+                    <span id="taxAmount" class="text-white">₹85.00</span>
+                </div>
+                <hr class="border-gray-600">
+                <div class="flex justify-between text-lg font-semibold">
+                    <span class="text-white">Total Paid:</span>
+                    <span id="totalAmount" class="text-bms-red">₹935.00</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Payment Method:</span>
+                    <span id="paymentMethod" class="text-white">Credit Card</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Information -->
+        <div class="ticket-card p-8 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-6">Important Information</h2>
+            <div class="space-y-4 text-gray-300">
+                <div class="flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-bms-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>Please arrive at the theater at least 15 minutes before the show time.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-bms-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>Show your booking reference or QR code at the theater entrance.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-bms-red mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p>A confirmation email has been sent to your registered email address.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onclick="downloadTicket()" 
+                    class="bg-bms-red hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                Download Ticket
+            </button>
+            <a href="/bookings" 
+               class="border-2 border-bms-red text-bms-red hover:bg-bms-red hover:text-white px-8 py-3 rounded-lg font-semibold transition-colors text-center">
+                View All Bookings
+            </a>
+            <a href="/movies" 
+               class="border-2 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white px-8 py-3 rounded-lg font-semibold transition-colors text-center">
+                Book More Movies
+            </a>
+        </div>
+    </main>
+
+    <script>
+        // User menu toggle
+        document.getElementById('userMenuButton').addEventListener('click', function() {
+            const menu = document.getElementById('userMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const button = document.getElementById('userMenuButton');
+            if (menu && button && !button.contains(event.target) && !menu.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Load booking details from URL parameters or localStorage
+        function loadBookingDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingRef = urlParams.get('bookingReference') || 'BOOK123456';
+            
+            // In a real application, you would fetch booking details from the server
+            // For now, we'll use mock data
+            const mockBooking = {
+                movieTitle: 'Salaar 2',
+                movieGenre: 'Action, Adventure',
+                movieDuration: '3h 1m',
+                theaterName: 'CineMax Theater',
+                screenName: 'Screen 1',
+                showDateTime: 'Today, 7:00 PM',
+                seatNumbers: 'A1, A2',
+                ticketPrice: '₹800.00',
+                bookingFee: '₹50.00',
+                taxAmount: '₹85.00',
+                totalAmount: '₹935.00',
+                paymentMethod: 'Credit Card'
+            };
+
+            // Update the page with booking details
+            document.getElementById('movieTitle').textContent = mockBooking.movieTitle;
+            document.getElementById('movieGenre').textContent = mockBooking.movieGenre;
+            document.getElementById('movieDuration').textContent = mockBooking.movieDuration;
+            document.getElementById('theaterName').textContent = mockBooking.theaterName;
+            document.getElementById('screenName').textContent = mockBooking.screenName;
+            document.getElementById('showDateTime').textContent = mockBooking.showDateTime;
+            document.getElementById('seatNumbers').textContent = mockBooking.seatNumbers;
+            document.getElementById('ticketPrice').textContent = mockBooking.ticketPrice;
+            document.getElementById('bookingFee').textContent = mockBooking.bookingFee;
+            document.getElementById('taxAmount').textContent = mockBooking.taxAmount;
+            document.getElementById('totalAmount').textContent = mockBooking.totalAmount;
+            document.getElementById('paymentMethod').textContent = mockBooking.paymentMethod;
+        }
+
+        // Download ticket function
+        function downloadTicket() {
+            // In a real application, this would generate and download a PDF ticket
+            window.notificationSystem.info(
+                'The ticket download feature is currently under development. Your booking confirmation details are displayed above. Please save this page or take a screenshot for your records.',
+                {
+                    title: 'Feature Coming Soon',
+                    duration: 6000
+                }
+            );
+        }
+
+        // Load booking details when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBookingDetails();
+        });
+    </script>
+</body>
+</html>

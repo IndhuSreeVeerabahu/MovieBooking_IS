@@ -1,0 +1,279 @@
+/**
+ * Form Validation Styles
+ * Provides visual feedback for form validation states
+ */
+
+/* Base validation styles */
+.form-field {
+    transition: all 0.3s ease;
+}
+
+.form-field.valid {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-field.invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-field:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(248, 68, 100, 0.1);
+}
+
+/* Error message styles */
+.error-message {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #ef4444;
+    animation: slideDown 0.3s ease;
+}
+
+.error-message.hidden {
+    display: none;
+}
+
+/* Success message styles */
+.success-message {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #10b981;
+    animation: slideDown 0.3s ease;
+}
+
+.success-message.hidden {
+    display: none;
+}
+
+/* Loading state for form submission */
+.form-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.form-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #F84464;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Required field indicator */
+.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+/* Validation icons */
+.field-container {
+    position: relative;
+}
+
+.field-container .validation-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.field-container.valid .validation-icon {
+    opacity: 1;
+    color: #10b981;
+}
+
+.field-container.invalid .validation-icon {
+    opacity: 1;
+    color: #ef4444;
+}
+
+/* Form group styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group.has-error .form-label {
+    color: #ef4444;
+}
+
+.form-group.has-success .form-label {
+    color: #10b981;
+}
+
+/* Custom checkbox and radio styles */
+.custom-checkbox,
+.custom-radio {
+    position: relative;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.custom-checkbox input,
+.custom-radio input {
+    opacity: 0;
+    position: absolute;
+}
+
+.custom-checkbox .checkmark,
+.custom-radio .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #374151;
+    border: 2px solid #6b7280;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.custom-radio .checkmark {
+    border-radius: 50%;
+}
+
+.custom-checkbox:hover .checkmark,
+.custom-radio:hover .checkmark {
+    border-color: #F84464;
+}
+
+.custom-checkbox input:checked ~ .checkmark,
+.custom-radio input:checked ~ .checkmark {
+    background-color: #F84464;
+    border-color: #F84464;
+}
+
+.custom-checkbox .checkmark:after,
+.custom-radio .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-radio input:checked ~ .checkmark:after {
+    display: block;
+    left: 6px;
+    top: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.form-field.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .error-message,
+    .success-message {
+        font-size: 0.75rem;
+    }
+    
+    .field-container .validation-icon {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* Dark theme adjustments */
+.dark .form-field.valid {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.dark .form-field.invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.dark .form-field:focus {
+    box-shadow: 0 0 0 3px rgba(248, 68, 100, 0.2);
+}
+
+/* Form validation summary */
+.validation-summary {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.validation-summary h3 {
+    color: #dc2626;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.validation-summary ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.validation-summary li {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.dark .validation-summary {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dark .validation-summary h3,
+.dark .validation-summary li {
+    color: #fca5a5;
+}

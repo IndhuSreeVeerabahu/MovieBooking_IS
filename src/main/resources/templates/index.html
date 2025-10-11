@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieHub - Book Your Movie Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback Tailwind CDN -->
+    <script>
+        // Fallback Tailwind CDN if the primary one fails
+        if (typeof tailwind === 'undefined') {
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = 'https://unpkg.com/tailwindcss@3.4.0/lib/tailwind.min.js';
+            fallbackScript.onerror = function() {
+                console.log('Primary Tailwind CDN failed, using local fallback styles');
+            };
+            document.head.appendChild(fallbackScript);
+        }
+    </script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Fallback styles in case Tailwind doesn't load -->
+    <style>
+        /* Fallback styles for critical elements */
+        body {
+            background-color: #1A1A1A !important;
+            color: #FFFFFF !important;
+        }
+        
+        .text-white {
+            color: #FFFFFF !important;
+        }
+        
+        .text-gray-300 {
+            color: #D1D5DB !important;
+        }
+        
+        .text-gray-400 {
+            color: #9CA3AF !important;
+        }
+        
+        .bg-bms-red {
+            background-color: #F84464 !important;
+        }
+        
+        .text-bms-red {
+            color: #F84464 !important;
+        }
+        
+        .bg-bms-dark {
+            background-color: #1A1A1A !important;
+        }
+        
+        .bg-bms-gray {
+            background-color: #2A2A2A !important;
+        }
+        
+        .border-bms-red {
+            border-color: #F84464 !important;
+        }
+        
+        .hover\\:text-bms-red:hover {
+            color: #F84464 !important;
+        }
+        
+        .hover\\:bg-red-600:hover {
+            background-color: #DC2626 !important;
+        }
+        
+        .hover\\:bg-bms-red:hover {
+            background-color: #F84464 !important;
+        }
+        
+        .hover\\:text-white:hover {
+            color: #FFFFFF !important;
+        }
+        
+        /* Ensure navigation and text are visible */
+        nav {
+            background-color: rgba(26, 26, 26, 0.8) !important;
+            backdrop-filter: blur(15px) !important;
+            border-bottom: 1px solid #374151 !important;
+        }
+        
+        /* Ensure all text elements have proper contrast */
+        h1, h2, h3, h4, h5, h6 {
+            color: #FFFFFF !important;
+        }
+        
+        p, span, div {
+            color: inherit !important;
+        }
+        
+        a {
+            color: inherit !important;
+        }
+        
+        /* Button styles */
+        .bg-bms-red, .bg-red-600 {
+            background-color: #F84464 !important;
+            color: #FFFFFF !important;
+        }
+        
+        .border-2 {
+            border-width: 2px !important;
+        }
+        
+        .rounded-lg {
+            border-radius: 0.5rem !important;
+        }
+        
+        .px-4 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .py-2 {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        
+        .px-8 {
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        
+        .py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem !important;
+        }
+        
+        .font-semibold {
+            font-weight: 600 !important;
+        }
+        
+        .font-bold {
+            font-weight: 700 !important;
+        }
+        
+        .text-2xl {
+            font-size: 1.5rem !important;
+        }
+        
+        .text-4xl {
+            font-size: 2.25rem !important;
+        }
+        
+        .text-5xl {
+            font-size: 3rem !important;
+        }
+        
+        .text-7xl {
+            font-size: 4.5rem !important;
+        }
+        
+        .text-xl {
+            font-size: 1.25rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .mb-6 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-8 {
+            margin-bottom: 2rem !important;
+        }
+        
+        .mt-4 {
+            margin-top: 1rem !important;
+        }
+        
+        .py-16 {
+            padding-top: 4rem !important;
+            padding-bottom: 4rem !important;
+        }
+        
+        .py-20 {
+            padding-top: 5rem !important;
+            padding-bottom: 5rem !important;
+        }
+        
+        .py-12 {
+            padding-top: 3rem !important;
+            padding-bottom: 3rem !important;
+        }
+        
+        .max-w-7xl {
+            max-width: 80rem !important;
+        }
+        
+        .mx-auto {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        .px-4 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .flex {
+            display: flex !important;
+        }
+        
+        .justify-center {
+            justify-content: center !important;
+        }
+        
+        .items-center {
+            align-items: center !important;
+        }
+        
+        .space-x-4 > * + * {
+            margin-left: 1rem !important;
+        }
+        
+        .space-x-8 > * + * {
+            margin-left: 2rem !important;
+        }
+        
+        .gap-4 {
+            gap: 1rem !important;
+        }
+        
+        .gap-8 {
+            gap: 2rem !important;
+        }
+        
+        .flex-col {
+            flex-direction: column !important;
+        }
+        
+        .sm\\:flex-row {
+            flex-direction: row !important;
+        }
+        
+        .sm\\:px-6 {
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+        }
+        
+        .lg\\:px-8 {
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        
+        .md\\:text-7xl {
+            font-size: 4.5rem !important;
+        }
+        
+        .md\\:text-2xl {
+            font-size: 1.5rem !important;
+        }
+        
+        .md\\:flex {
+            display: flex !important;
+        }
+        
+        .md\\:grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+        
+        .md\\:grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+        
+        .lg\\:grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+        
+        .lg\\:grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+        
+        .xl\\:grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+        
+        .grid {
+            display: grid !important;
+        }
+        
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        }
+        
+        .min-h-screen {
+            min-height: 100vh !important;
+        }
+        
+        .h-16 {
+            height: 4rem !important;
+        }
+        
+        .relative {
+            position: relative !important;
+        }
+        
+        .z-10 {
+            z-index: 10 !important;
+        }
+        
+        .transition-colors {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke !important;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition-duration: 150ms !important;
+        }
+        
+        .overflow-hidden {
+            overflow: hidden !important;
+        }
+        
+        .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        .border-t {
+            border-top-width: 1px !important;
+        }
+        
+        .border-b {
+            border-bottom-width: 1px !important;
+        }
+        
+        .border-gray-700 {
+            border-color: #374151 !important;
+        }
+        
+        .w-full {
+            width: 100% !important;
+        }
+        
+        .h-80 {
+            height: 20rem !important;
+        }
+        
+        .object-cover {
+            object-fit: cover !important;
+        }
+        
+        .absolute {
+            position: absolute !important;
+        }
+        
+        .top-4 {
+            top: 1rem !important;
+        }
+        
+        .right-4 {
+            right: 1rem !important;
+        }
+        
+        .bottom-4 {
+            bottom: 1rem !important;
+        }
+        
+        .left-4 {
+            left: 1rem !important;
+        }
+        
+        .p-6 {
+            padding: 1.5rem !important;
+        }
+        
+        .p-8 {
+            padding: 2rem !important;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem !important;
+        }
+        
+        .mb-2 {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .line-clamp-3 {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        
+        .justify-between {
+            justify-content: space-between !important;
+        }
+        
+        .inline-block {
+            display: inline-block !important;
+        }
+        
+        .bg-green-500 {
+            background-color: #10B981 !important;
+        }
+        
+        .bg-black\/70 {
+            background-color: rgba(0, 0, 0, 0.7) !important;
+        }
+        
+        .bg-bms-red\/20 {
+            background-color: rgba(248, 68, 100, 0.2) !important;
+        }
+        
+        .bg-bms-gray\/30 {
+            background-color: rgba(42, 42, 42, 0.3) !important;
+        }
+        
+        .bg-bms-gray\/50 {
+            background-color: rgba(42, 42, 42, 0.5) !important;
+        }
+        
+        .w-16 {
+            width: 4rem !important;
+        }
+        
+        .h-16 {
+            height: 4rem !important;
+        }
+        
+        .w-8 {
+            width: 2rem !important;
+        }
+        
+        .h-8 {
+            height: 2rem !important;
+        }
+        
+        .rounded-full {
+            border-radius: 9999px !important;
+        }
+        
+        .space-y-2 > * + * {
+            margin-top: 0.5rem !important;
+        }
+        
+        .space-y-8 > * + * {
+            margin-top: 2rem !important;
+        }
+        
+        .pt-8 {
+            padding-top: 2rem !important;
+        }
+        
+        .mt-8 {
+            margin-top: 2rem !important;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .fixed {
+            position: fixed !important;
+        }
+        
+        .top-10 {
+            top: 2.5rem !important;
+        }
+        
+        .left-10 {
+            left: 2.5rem !important;
+        }
+        
+        .bottom-10 {
+            bottom: 2.5rem !important;
+        }
+        
+        .right-10 {
+            right: 2.5rem !important;
+        }
+        
+        .w-20 {
+            width: 5rem !important;
+        }
+        
+        .h-20 {
+            height: 5rem !important;
+        }
+        
+        .w-32 {
+            width: 8rem !important;
+        }
+        
+        .h-32 {
+            height: 8rem !important;
+        }
+        
+        .w-16 {
+            width: 4rem !important;
+        }
+        
+        .h-16 {
+            height: 4rem !important;
+        }
+        
+        .bg-bms-red\/10 {
+            background-color: rgba(248, 68, 100, 0.1) !important;
+        }
+        
+        .bg-bms-red\/5 {
+            background-color: rgba(248, 68, 100, 0.05) !important;
+        }
+        
+        .blur-xl {
+            filter: blur(24px) !important;
+        }
+        
+        .blur-2xl {
+            filter: blur(40px) !important;
+        }
+        
+        .blur-lg {
+            filter: blur(16px) !important;
+        }
+        
+        .top-1\/2 {
+            top: 50% !important;
+        }
+        
+        .left-1\/4 {
+            left: 25% !important;
+        }
+        
+        /* Responsive utilities */
+        @media (min-width: 640px) {
+            .sm\\:flex-row {
+                flex-direction: row !important;
+            }
+            .sm\\:px-6 {
+                padding-left: 1.5rem !important;
+                padding-right: 1.5rem !important;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .md\\:flex {
+                display: flex !important;
+            }
+            .md\\:text-7xl {
+                font-size: 4.5rem !important;
+            }
+            .md\\:text-2xl {
+                font-size: 1.5rem !important;
+            }
+            .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            .md\\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\\:px-8 {
+                padding-left: 2rem !important;
+                padding-right: 2rem !important;
+            }
+            .lg\\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+            .lg\\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+        
+        @media (min-width: 1280px) {
+            .xl\\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+    </style>
+    <style>
+        .bg-gradient-bms {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+        }
+        
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .movie-card-bg {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+        }
+        
+        /* Floating poster styles removed to prevent visual interference */
+        
+        .glass-effect {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(248, 68, 100, 0.1) 0%, rgba(26, 26, 26, 0.9) 50%, rgba(42, 42, 42, 0.9) 100%);
+        }
+        
+        .movie-poster {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .movie-poster:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(248, 68, 100, 0.3);
+            z-index: 10;
+        }
+        
+        /* Profile dropdown styles */
+        #profileDropdown {
+            z-index: 99999 !important;
+            position: absolute !important;
+            top: 100% !important;
+            right: 0 !important;
+            margin-top: 0.5rem !important;
+            background-color: #2A2A2A !important;
+            border: 1px solid #374151 !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+            min-width: 12rem !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        #profileDropdown a {
+            display: block !important;
+            padding: 0.5rem 1rem !important;
+            color: #D1D5DB !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease !important;
+        }
+        
+        #profileDropdown a:hover {
+            background-color: rgba(42, 42, 42, 0.5) !important;
+            color: #FFFFFF !important;
+        }
+        
+        #profileDropdown hr {
+            margin: 0.5rem 0 !important;
+            border-color: #374151 !important;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Floating Movie Posters - Removed to prevent visual interference -->
+    
+    <!-- Navigation -->
+    <nav class="relative glass-effect border-b border-gray-700" style="z-index: 100 !important;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <!-- Navigation items removed -->
+                </div>
+                
+                <!-- Authentication Section -->
+                <div th:if="${isAuthenticated}" class="relative" id="userProfile" style="z-index: 99999 !important;">
+                    <div class="flex items-center space-x-4">
+                        <!-- User Info -->
+                        <div class="flex items-center space-x-3 cursor-pointer" onclick="toggleProfileDropdown()">
+                            <div class="w-10 h-10 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1).toUpperCase()}">U</span>
+                            </div>
+                            <div class="hidden md:block">
+                                <p class="text-white font-medium text-sm" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
+                                <p class="text-gray-400 text-xs" th:text="${user.email}">user@example.com</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="profileDropdown" class="absolute right-0 top-full mt-2 w-48 bg-bms-gray border border-gray-700 rounded-lg shadow-lg hidden" style="z-index: 99999 !important;">
+                            <div class="py-2">
+                                <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">Dashboard</a>
+                                <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">My Bookings</a>
+                                <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">Profile Settings</a>
+                                <hr class="my-2 border-gray-700">
+                                <a href="/logout" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Login/Register Buttons for Non-Authenticated Users -->
+                <div th:if="${!isAuthenticated}" class="flex items-center space-x-4">
+                    <a href="/login" class="text-white hover:text-bms-red transition-colors font-medium">
+                        Login
+                    </a>
+                    <a href="/register" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Sign Up
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative hero-gradient py-20" style="z-index: 1 !important;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl md:text-7xl font-bold text-white mb-6">
+                Book Your
+                <span class="text-bms-red">Movie</span>
+                <br>Experience
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                Discover the latest blockbusters, book tickets instantly, and enjoy an unforgettable cinema experience
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/movies" class="bg-bms-red hover:bg-red-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
+                    Browse Movies
+                </a>
+                <a th:if="${!isAuthenticated}" href="/register" class="border-2 border-bms-red text-bms-red hover:bg-bms-red hover:text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
+                    Get Started
+                </a>
+                <a th:if="${isAuthenticated}" href="/dashboard" class="border-2 border-bms-red text-bms-red hover:bg-bms-red hover:text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Movies Section -->
+    <section class="relative z-20 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-white mb-4">Featured Movies</h2>
+                <p class="text-xl text-gray-400">Don't miss these blockbuster hits</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" th:if="${featuredMovies != null and !featuredMovies.empty}">
+                <div th:each="movie : ${featuredMovies}" class="movie-card-bg rounded-lg overflow-hidden shadow-lg movie-poster">
+                    <div class="relative">
+                        <img th:src="${movie.posterUrl}" 
+                             th:alt="${movie.title}"
+                             class="w-full h-80 object-cover"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iIzJBMkEyQSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gUG9zdGVyPC90ZXh0Pgo8L3N2Zz4='">
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-bms-red text-white px-2 py-1 rounded text-sm font-semibold" 
+                                  th:text="${movie.rating}">PG-13</span>
+                        </div>
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <span class="bg-black/70 text-white px-2 py-1 rounded text-sm" 
+                                  th:text="${movie.formattedDuration}">2h 30m</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2" th:text="${movie.title}">Movie Title</h3>
+                        <p class="text-gray-400 text-sm mb-3" th:text="${movie.genre.displayName}">Action</p>
+                        <p class="text-gray-300 text-sm mb-4 line-clamp-3" th:text="${movie.description}">Movie description...</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-bms-red font-semibold" th:text="${movie.language}">English</span>
+                            <a th:href="@{/movies}" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fallback for no featured movies -->
+            <div class="text-center" th:if="${featuredMovies == null or featuredMovies.empty}">
+                <p class="text-gray-400 text-lg">No featured movies available at the moment.</p>
+                <a href="/movies" class="inline-block bg-bms-red hover:bg-red-600 text-white px-6 py-3 rounded-lg mt-4 transition-colors">
+                    View All Movies
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Currently Showing Section -->
+    <section class="relative z-20 py-16 bg-bms-gray/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-white mb-4">Now Showing</h2>
+                <p class="text-xl text-gray-400">Catch these movies in theaters now</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" th:if="${currentlyShowing != null and !currentlyShowing.empty}">
+                <div th:each="movie : ${currentlyShowing}" class="movie-card-bg rounded-lg overflow-hidden shadow-lg movie-poster">
+                    <div class="relative">
+                        <img th:src="${movie.posterUrl}" 
+                             th:alt="${movie.title}"
+                             class="w-full h-80 object-cover"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iIzJBMkEyQSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gUG9zdGVyPC90ZXh0Pgo8L3N2Zz4='">
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-green-500 text-white px-2 py-1 rounded text-sm font-semibold">Now Showing</span>
+                        </div>
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <span class="bg-black/70 text-white px-2 py-1 rounded text-sm" 
+                                  th:text="${movie.formattedDuration}">2h 30m</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2" th:text="${movie.title}">Movie Title</h3>
+                        <p class="text-gray-400 text-sm mb-3" th:text="${movie.genre.displayName}">Action</p>
+                        <p class="text-gray-300 text-sm mb-4 line-clamp-3" th:text="${movie.description}">Movie description...</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-bms-red font-semibold" th:text="${movie.language}">English</span>
+                            <a th:href="@{/movies}" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fallback for no currently showing movies -->
+            <div class="text-center" th:if="${currentlyShowing == null or currentlyShowing.empty}">
+                <p class="text-gray-400 text-lg">No movies currently showing.</p>
+                <a href="/movies" class="inline-block bg-bms-red hover:bg-red-600 text-white px-6 py-3 rounded-lg mt-4 transition-colors">
+                    View All Movies
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="relative z-20 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-white mb-4">Why Choose MovieHub?</h2>
+                <p class="text-xl text-gray-400">Experience the best in movie booking</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="movie-card-bg rounded-lg p-8 text-center">
+                    <div class="w-16 h-16 bg-bms-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-bms-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Latest Movies</h3>
+                    <p class="text-gray-400">Access to the newest releases and blockbuster hits from around the world.</p>
+                </div>
+                
+                <div class="movie-card-bg rounded-lg p-8 text-center">
+                    <div class="w-16 h-16 bg-bms-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-bms-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Easy Booking</h3>
+                    <p class="text-gray-400">Simple and secure ticket booking process with instant confirmation.</p>
+                </div>
+                
+                <div class="movie-card-bg rounded-lg p-8 text-center">
+                    <div class="w-16 h-16 bg-bms-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-bms-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Best Experience</h3>
+                    <p class="text-gray-400">Premium cinema experience with comfortable seating and crystal clear sound.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-20 bg-bms-gray/50 border-t border-gray-700 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-4">MovieHub</h3>
+                    <p class="text-gray-400">Your ultimate destination for movie ticket booking and entertainment.</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/movies" class="text-gray-400 hover:text-white transition-colors">Browse Movies</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Theaters</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Offers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Gift Cards</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Ticket Refund</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Report Issue</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Contact</h4>
+                    <ul class="space-y-2">
+                        <li class="text-gray-400">Email: support@moviehub.com</li>
+                        <li class="text-gray-400">Phone: +1 (555) 123-4567</li>
+                        <li class="text-gray-400">Address: 123 Cinema Street</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+                <p class="text-gray-400">&copy; 2024 MovieHub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Additional Movie Elements -->
+    <div class="fixed top-10 left-10 w-20 h-20 bg-bms-red/10 rounded-full blur-xl"></div>
+    <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
+    <div class="fixed top-1/2 left-1/4 w-16 h-16 bg-bms-red/10 rounded-full blur-lg"></div>
+    
+    <!-- Script to ensure Tailwind loads and apply fallback styles -->
+    <script>
+        // Check if Tailwind CSS has loaded
+        function checkTailwindLoaded() {
+            const testElement = document.createElement('div');
+            testElement.className = 'bg-red-500';
+            testElement.style.display = 'none';
+            document.body.appendChild(testElement);
+            
+            const computedStyle = window.getComputedStyle(testElement);
+            const hasTailwind = computedStyle.backgroundColor === 'rgb(239, 68, 68)' || 
+                               computedStyle.backgroundColor === 'rgb(248, 68, 100)';
+            
+            document.body.removeChild(testElement);
+            return hasTailwind;
+        }
+        
+        // Apply fallback styles if Tailwind hasn't loaded
+        function applyFallbackStyles() {
+            if (!checkTailwindLoaded()) {
+                console.log('Tailwind CSS not detected, applying fallback styles...');
+                
+                // Force apply critical styles
+                const style = document.createElement('style');
+                style.textContent = `
+                    body { 
+                        background-color: #1A1A1A !important; 
+                        color: #FFFFFF !important; 
+                        font-family: system-ui, -apple-system, sans-serif !important;
+                    }
+                    nav { 
+                        background-color: rgba(26, 26, 26, 0.9) !important; 
+                        backdrop-filter: blur(15px) !important;
+                        border-bottom: 1px solid #374151 !important;
+                    }
+                    h1, h2, h3, h4, h5, h6 { 
+                        color: #FFFFFF !important; 
+                    }
+                    .text-white { color: #FFFFFF !important; }
+                    .text-gray-300 { color: #D1D5DB !important; }
+                    .text-gray-400 { color: #9CA3AF !important; }
+                    .text-bms-red { color: #F84464 !important; }
+                    .bg-bms-red { background-color: #F84464 !important; }
+                    .bg-bms-dark { background-color: #1A1A1A !important; }
+                    .bg-bms-gray { background-color: #2A2A2A !important; }
+                    .border-bms-red { border-color: #F84464 !important; }
+                    .hover\\:text-bms-red:hover { color: #F84464 !important; }
+                    .hover\\:bg-red-600:hover { background-color: #DC2626 !important; }
+                    .hover\\:bg-bms-red:hover { background-color: #F84464 !important; }
+                    .hover\\:text-white:hover { color: #FFFFFF !important; }
+                    a { color: inherit !important; text-decoration: none !important; }
+                    a:hover { color: #F84464 !important; }
+                    button, .bg-bms-red, .bg-red-600 { 
+                        background-color: #F84464 !important; 
+                        color: #FFFFFF !important; 
+                        border: none !important;
+                        padding: 0.5rem 1rem !important;
+                        border-radius: 0.5rem !important;
+                        cursor: pointer !important;
+                    }
+                    .border-2 { border-width: 2px !important; }
+                    .rounded-lg { border-radius: 0.5rem !important; }
+                    .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+                    .py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+                    .px-8 { padding-left: 2rem !important; padding-right: 2rem !important; }
+                    .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+                    .text-lg { font-size: 1.125rem !important; }
+                    .font-semibold { font-weight: 600 !important; }
+                    .font-bold { font-weight: 700 !important; }
+                    .text-2xl { font-size: 1.5rem !important; }
+                    .text-4xl { font-size: 2.25rem !important; }
+                    .text-5xl { font-size: 3rem !important; }
+                    .text-7xl { font-size: 4.5rem !important; }
+                    .text-xl { font-size: 1.25rem !important; }
+                    .mb-4 { margin-bottom: 1rem !important; }
+                    .mb-6 { margin-bottom: 1.5rem !important; }
+                    .mb-8 { margin-bottom: 2rem !important; }
+                    .mt-4 { margin-top: 1rem !important; }
+                    .py-16 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+                    .py-20 { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+                    .py-12 { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+                    .max-w-7xl { max-width: 80rem !important; }
+                    .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+                    .text-center { text-align: center !important; }
+                    .flex { display: flex !important; }
+                    .justify-center { justify-content: center !important; }
+                    .items-center { align-items: center !important; }
+                    .space-x-4 > * + * { margin-left: 1rem !important; }
+                    .space-x-8 > * + * { margin-left: 2rem !important; }
+                    .gap-4 { gap: 1rem !important; }
+                    .gap-8 { gap: 2rem !important; }
+                    .flex-col { flex-direction: column !important; }
+                    .grid { display: grid !important; }
+                    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+                    .min-h-screen { min-height: 100vh !important; }
+                    .h-16 { height: 4rem !important; }
+                    .relative { position: relative !important; }
+                    .z-10 { z-index: 10 !important; }
+                    .transition-colors { transition: all 0.15s ease !important; }
+                    .overflow-hidden { overflow: hidden !important; }
+                    .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; }
+                    .border-t { border-top-width: 1px !important; }
+                    .border-b { border-bottom-width: 1px !important; }
+                    .border-gray-700 { border-color: #374151 !important; }
+                    .w-full { width: 100% !important; }
+                    .h-80 { height: 20rem !important; }
+                    .object-cover { object-fit: cover !important; }
+                    .absolute { position: absolute !important; }
+                    .top-4 { top: 1rem !important; }
+                    .right-4 { right: 1rem !important; }
+                    .bottom-4 { bottom: 1rem !important; }
+                    .left-4 { left: 1rem !important; }
+                    .p-6 { padding: 1.5rem !important; }
+                    .p-8 { padding: 2rem !important; }
+                    .text-sm { font-size: 0.875rem !important; }
+                    .mb-2 { margin-bottom: 0.5rem !important; }
+                    .mb-3 { margin-bottom: 0.75rem !important; }
+                    .line-clamp-3 { 
+                        display: -webkit-box !important; 
+                        -webkit-line-clamp: 3 !important; 
+                        -webkit-box-orient: vertical !important; 
+                        overflow: hidden !important; 
+                    }
+                    .justify-between { justify-content: space-between !important; }
+                    .inline-block { display: inline-block !important; }
+                    .bg-green-500 { background-color: #10B981 !important; }
+                    .bg-black\\/70 { background-color: rgba(0, 0, 0, 0.7) !important; }
+                    .bg-bms-red\\/20 { background-color: rgba(248, 68, 100, 0.2) !important; }
+                    .bg-bms-gray\\/30 { background-color: rgba(42, 42, 42, 0.3) !important; }
+                    .bg-bms-gray\\/50 { background-color: rgba(42, 42, 42, 0.5) !important; }
+                    .w-16 { width: 4rem !important; }
+                    .h-16 { height: 4rem !important; }
+                    .w-8 { width: 2rem !important; }
+                    .h-8 { height: 2rem !important; }
+                    .rounded-full { border-radius: 9999px !important; }
+                    .space-y-2 > * + * { margin-top: 0.5rem !important; }
+                    .space-y-8 > * + * { margin-top: 2rem !important; }
+                    .pt-8 { padding-top: 2rem !important; }
+                    .mt-8 { margin-top: 2rem !important; }
+                    .hidden { display: none !important; }
+                    .fixed { position: fixed !important; }
+                    .top-10 { top: 2.5rem !important; }
+                    .left-10 { left: 2.5rem !important; }
+                    .bottom-10 { bottom: 2.5rem !important; }
+                    .right-10 { right: 2.5rem !important; }
+                    .w-20 { width: 5rem !important; }
+                    .h-20 { height: 5rem !important; }
+                    .w-32 { width: 8rem !important; }
+                    .h-32 { height: 8rem !important; }
+                    .bg-bms-red\\/10 { background-color: rgba(248, 68, 100, 0.1) !important; }
+                    .bg-bms-red\\/5 { background-color: rgba(248, 68, 100, 0.05) !important; }
+                    .blur-xl { filter: blur(24px) !important; }
+                    .blur-2xl { filter: blur(40px) !important; }
+                    .blur-lg { filter: blur(16px) !important; }
+                    .top-1\\/2 { top: 50% !important; }
+                    .left-1\\/4 { left: 25% !important; }
+                    
+                    /* Responsive styles */
+                    @media (min-width: 640px) {
+                        .sm\\:flex-row { flex-direction: row !important; }
+                        .sm\\:px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+                    }
+                    @media (min-width: 768px) {
+                        .md\\:flex { display: flex !important; }
+                        .md\\:text-7xl { font-size: 4.5rem !important; }
+                        .md\\:text-2xl { font-size: 1.5rem !important; }
+                        .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+                        .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+                    }
+                    @media (min-width: 1024px) {
+                        .lg\\:px-8 { padding-left: 2rem !important; padding-right: 2rem !important; }
+                        .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+                        .lg\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+                    }
+                    @media (min-width: 1280px) {
+                        .xl\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // Run the check when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for Tailwind to potentially load
+            setTimeout(applyFallbackStyles, 100);
+        });
+        
+        // Also run on window load as a backup
+        window.addEventListener('load', function() {
+            setTimeout(applyFallbackStyles, 200);
+        });
+
+        // Handle profile dropdown toggle
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileContainer = document.getElementById('userProfile');
+            const dropdown = document.getElementById('profileDropdown');
+            
+            if (profileContainer && dropdown && !profileContainer.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+    </script>
+</body>
+</html>

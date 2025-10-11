@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Test - MovieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative bg-bms-gray/80 backdrop-blur-lg border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-white hover:text-bms-red transition-colors">Dashboard</a>
+                    <a href="/bookings" class="text-white hover:text-bms-red transition-colors">My Bookings</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl w-full space-y-8">
+            <!-- Test Payment Card -->
+            <div class="bg-bms-gray rounded-2xl shadow-2xl p-8 border border-gray-700">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-white mb-2">Payment Test</h1>
+                    <p class="text-gray-400">Test Cashfree payment integration</p>
+                </div>
+
+                <!-- Test Form -->
+                <form id="paymentForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Customer Name</label>
+                            <input type="text" id="customerName" value="Test User" 
+                                   class="w-full px-4 py-3 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Customer Email</label>
+                            <input type="email" id="customerEmail" value="test@example.com" 
+                                   class="w-full px-4 py-3 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Customer Phone</label>
+                            <input type="tel" id="customerPhone" value="+919876543210" 
+                                   class="w-full px-4 py-3 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
+                            <input type="number" id="amount" value="500" min="1" 
+                                   class="w-full px-4 py-3 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Booking ID</label>
+                        <input type="number" id="bookingId" value="1" min="1" 
+                               class="w-full px-4 py-3 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                    </div>
+
+                    <!-- Test Buttons -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button type="button" onclick="testPayment()" 
+                                class="bg-bms-red hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            Test Payment
+                        </button>
+                        <button type="button" onclick="simulateSuccess()" 
+                                class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            Simulate Success
+                        </button>
+                        <button type="button" onclick="simulateFailure()" 
+                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            Simulate Failure
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Response Area -->
+                <div id="responseArea" class="mt-8 hidden">
+                    <h3 class="text-lg font-semibold text-white mb-4">Response</h3>
+                    <div id="responseContent" class="bg-bms-light-gray rounded-lg p-4 text-sm text-gray-300 font-mono overflow-auto max-h-64">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Information -->
+            <div class="bg-bms-gray rounded-lg p-6 border border-gray-700">
+                <h3 class="text-lg font-semibold text-white mb-4">Test Information</h3>
+                <div class="space-y-3 text-sm text-gray-400">
+                    <div class="flex justify-between">
+                        <span>Environment:</span>
+                        <span class="text-yellow-400">TEST</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>App ID:</span>
+                        <span class="text-gray-300 font-mono text-xs">TEST1082838215957fe1153788f322479528382801</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Secret Key:</span>
+                        <span class="text-gray-300 font-mono text-xs">cfsk_ma_test_...f1e97d01</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Base URL:</span>
+                        <span class="text-gray-300">https://sandbox.cashfree.com</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Cards -->
+            <div class="bg-bms-gray rounded-lg p-6 border border-gray-700">
+                <h3 class="text-lg font-semibold text-white mb-4">Test Card Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                        <h4 class="text-green-400 font-semibold mb-2">Success Card</h4>
+                        <p class="text-gray-300">Card: 4111 1111 1111 1111</p>
+                        <p class="text-gray-300">CVV: 123</p>
+                        <p class="text-gray-300">Expiry: Any future date</p>
+                    </div>
+                    <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                        <h4 class="text-red-400 font-semibold mb-2">Failure Card</h4>
+                        <p class="text-gray-300">Card: 4000 0000 0000 0002</p>
+                        <p class="text-gray-300">CVV: 123</p>
+                        <p class="text-gray-300">Expiry: Any future date</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Elements -->
+    <div class="fixed top-10 left-10 w-20 h-20 bg-bms-red/10 rounded-full blur-xl"></div>
+    <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
+
+    <script>
+        function testPayment() {
+            const formData = {
+                bookingId: document.getElementById('bookingId').value,
+                customerName: document.getElementById('customerName').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                customerPhone: document.getElementById('customerPhone').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                currency: 'INR',
+                returnUrl: 'http://localhost:8080/payment/success',
+                notifyUrl: 'http://localhost:8080/payment/callback'
+            };
+
+            showResponse('Initiating payment...', 'info');
+
+            fetch('/payment/initiate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse(JSON.stringify(data, null, 2), 'success');
+                
+                if (data.paymentUrl) {
+                    setTimeout(() => {
+                        window.open(data.paymentUrl, '_blank');
+                    }, 1000);
+                }
+            })
+            .catch(error => {
+                showResponse('Error: ' + error.message, 'error');
+            });
+        }
+
+        function simulateSuccess() {
+            window.location.href = '/payment/success?order_id=TEST_ORDER_123&order_token=test_token';
+        }
+
+        function simulateFailure() {
+            window.location.href = '/payment/failure?order_id=TEST_ORDER_123&reason=Payment declined by bank';
+        }
+
+        function showResponse(content, type) {
+            const responseArea = document.getElementById('responseArea');
+            const responseContent = document.getElementById('responseContent');
+            
+            responseContent.textContent = content;
+            responseContent.className = `bg-bms-light-gray rounded-lg p-4 text-sm font-mono overflow-auto max-h-64 ${
+                type === 'success' ? 'text-green-300' : 
+                type === 'error' ? 'text-red-300' : 
+                'text-gray-300'
+            }`;
+            
+            responseArea.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

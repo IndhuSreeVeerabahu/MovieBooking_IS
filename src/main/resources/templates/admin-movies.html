@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Management - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
+    <link rel="stylesheet" href="/css/validation.css">
+    <script src="/js/notification-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'bms-red': '#F84464',
+                        'bms-dark': '#1A1A1A',
+                        'bms-gray': '#2A2A2A',
+                        'bms-light-gray': '#3A3A3A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .movie-bg {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 50%, #1A1A1A 100%);
+            position: relative;
+        }
+        
+        .movie-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(248, 68, 100, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(248, 68, 100, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .glass-effect {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .movie-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 68, 100, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(248, 68, 100, 0.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(248, 68, 100, 0.3);
+            margin: 5% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-bms-dark min-h-screen movie-bg">
+    <!-- Navigation -->
+    <nav class="relative z-10 glass-effect border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/admin/dashboard" class="text-2xl font-bold text-white hover:text-bms-red transition-colors">MovieHub Admin</a>
+                    <span class="ml-2 px-2 py-1 bg-bms-red text-white text-xs rounded-full">ADMIN</span>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">Admin User</p>
+                        <p class="text-gray-400 text-sm" th:text="${user.email}">admin@moviehub.com</p>
+                    </div>
+                    <div class="relative">
+                        <button id="userMenuButton" class="flex items-center text-gray-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-bms-red rounded-full p-1">
+                            <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">A</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
+                            <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Admin Dashboard</a>
+                            <a href="/admin/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Movie Management</a>
+                            <a href="/admin/users" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">User Management</a>
+                            <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">User Dashboard</a>
+                            <hr class="my-1 border-gray-600">
+                            <form th:action="@{/logout}" method="post" class="block">
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">
+                                    Sign Out
+                                </button>
+                            </form>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Movie Management</h2>
+                    <p class="text-gray-400">Manage movies, genres, and movie information</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="refreshMovies()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Refresh
+                    </button>
+                    <div class="relative">
+                        <button onclick="showExportMenu()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                            Export Movies
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-light-gray border border-gray-600 rounded-lg shadow-lg z-10">
+                            <button onclick="exportMovies('csv')" class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700 rounded-t-lg">
+                                Export as CSV
+                            </button>
+                            <button onclick="exportMovies('excel')" class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700 rounded-b-lg">
+                                Export as Excel
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="openAddMovieModal()" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        Add New Movie
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="movie-card rounded-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Search Movies</label>
+                    <input type="text" id="searchInput" placeholder="Search by title..." 
+                           class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Genre</label>
+                    <select id="genreFilter" class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        <option value="">All Genres</option>
+                        <option value="ACTION">Action</option>
+                        <option value="COMEDY">Comedy</option>
+                        <option value="DRAMA">Drama</option>
+                        <option value="HORROR">Horror</option>
+                        <option value="ROMANCE">Romance</option>
+                        <option value="THRILLER">Thriller</option>
+                        <option value="SCI_FI">Sci-Fi</option>
+                        <option value="FANTASY">Fantasy</option>
+                        <option value="ADVENTURE">Adventure</option>
+                        <option value="ANIMATION">Animation</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Rating</label>
+                    <select id="ratingFilter" class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        <option value="">All Ratings</option>
+                        <option value="G">G - General Audiences</option>
+                        <option value="PG">PG - Parental Guidance</option>
+                        <option value="PG_13">PG-13 - Parents Strongly Cautioned</option>
+                        <option value="R">R - Restricted</option>
+                        <option value="NC_17">NC-17 - No One 17 and Under</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Status</label>
+                    <select id="statusFilter" class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                        <option value="featured">Featured</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movies Grid -->
+        <div class="movie-card rounded-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-white">All Movies</h3>
+                <span class="text-gray-400" id="movieCount">Loading...</span>
+            </div>
+            
+            <!-- Movies Grid -->
+            <div id="moviesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Movies will be loaded here -->
+                <div class="col-span-full text-center py-8 text-gray-400">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-bms-red"></div>
+                        <span class="ml-2">Loading movies...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Movie Modal -->
+    <div id="movieModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="modalTitle" class="text-2xl font-bold text-white">Add New Movie</h3>
+                    <button onclick="closeMovieModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <form id="movieForm" class="space-y-4">
+                    <input type="hidden" id="movieId" name="id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Movie Title *</label>
+                            <input type="text" id="movieTitle" name="title" required
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Director</label>
+                            <input type="text" id="movieDirector" name="director"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <textarea id="movieDescription" name="description" rows="3"
+                                  class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Genre *</label>
+                            <select id="movieGenre" name="genre" required
+                                    class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                                <option value="">Select Genre</option>
+                                <option value="ACTION">Action</option>
+                                <option value="COMEDY">Comedy</option>
+                                <option value="DRAMA">Drama</option>
+                                <option value="HORROR">Horror</option>
+                                <option value="ROMANCE">Romance</option>
+                                <option value="THRILLER">Thriller</option>
+                                <option value="SCI_FI">Sci-Fi</option>
+                                <option value="FANTASY">Fantasy</option>
+                                <option value="ADVENTURE">Adventure</option>
+                                <option value="ANIMATION">Animation</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Rating *</label>
+                            <select id="movieRating" name="rating" required
+                                    class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                                <option value="">Select Rating</option>
+                                <option value="G">G - General Audiences</option>
+                                <option value="PG">PG - Parental Guidance</option>
+                                <option value="PG_13">PG-13 - Parents Strongly Cautioned</option>
+                                <option value="R">R - Restricted</option>
+                                <option value="NC_17">NC-17 - No One 17 and Under</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Duration (minutes) *</label>
+                            <input type="number" id="movieDuration" name="durationMinutes" required min="1" max="600"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Release Date</label>
+                            <input type="datetime-local" id="movieReleaseDate" name="releaseDate"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">End Date</label>
+                            <input type="datetime-local" id="movieEndDate" name="endDate"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                            <input type="text" id="movieLanguage" name="language"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Cast</label>
+                            <input type="text" id="movieCast" name="cast"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Poster URL</label>
+                            <input type="url" id="moviePosterUrl" name="posterUrl"
+                                   class="w-full px-4 py-2 bg-bms-light-gray border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-bms-red">
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="movieIsActive" name="isActive" checked
+                                   class="w-4 h-4 text-bms-red bg-bms-light-gray border-gray-600 rounded focus:ring-bms-red focus:ring-2">
+                            <span class="ml-2 text-gray-300">Active</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="movieIsFeatured" name="isFeatured"
+                                   class="w-4 h-4 text-bms-red bg-bms-light-gray border-gray-600 rounded focus:ring-bms-red focus:ring-2">
+                            <span class="ml-2 text-gray-300">Featured</span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" onclick="closeMovieModal()" 
+                                class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-2 bg-bms-red hover:bg-red-600 text-white rounded-lg transition-colors">
+                            Save Movie
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let movies = [];
+        let filteredMovies = [];
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            const button = document.getElementById('userMenuButton');
+            
+            if (menu) {
+                menu.classList.toggle('hidden');
+                
+                // Add visual feedback
+                if (menu.classList.contains('hidden')) {
+                    button.classList.remove('ring-2', 'ring-bms-red');
+                } else {
+                    button.classList.add('ring-2', 'ring-bms-red');
+                }
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const button = document.getElementById('userMenuButton');
+            const menuElement = event.target.closest('#userMenu');
+            const buttonElement = event.target.closest('#userMenuButton');
+            
+            if (menu && !buttonElement && !menuElement) {
+                menu.classList.add('hidden');
+                button.classList.remove('ring-2', 'ring-bms-red');
+            }
+        });
+
+        // Add event listener to the button
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('userMenuButton');
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserMenu();
+                });
+            }
+        });
+
+        // Load movies from API
+        async function loadMovies() {
+            try {
+                const response = await fetch('/api/movies/admin/all?size=100');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch movies');
+                }
+                
+                const moviesData = await response.json();
+                // Handle paginated response
+                const moviesList = moviesData.content || moviesData;
+                movies = moviesList;
+                filteredMovies = [...movies];
+                displayMovies();
+            } catch (error) {
+                console.error('Error loading movies:', error);
+                
+                // Fallback to mock data if API fails
+                const mockMovies = [
+                    {
+                        id: 1,
+                        title: 'Salaar 2',
+                        description: 'The sequel to the blockbuster Salaar, continuing the epic saga of Deva and his journey through the criminal underworld.',
+                        genre: 'ACTION',
+                        durationMinutes: 180,
+                        rating: 'PG_13',
+                        posterUrl: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg',
+                        releaseDate: '2025-03-15T00:00:00',
+                        endDate: '2025-05-15T00:00:00',
+                        director: 'Prashanth Neel',
+                        cast: 'Prabhas, Prithviraj Sukumaran, Shruti Haasan',
+                        language: 'Telugu',
+                        isActive: true,
+                        isFeatured: true,
+                        createdAt: '2024-01-01T00:00:00'
+                    },
+                    {
+                        id: 2,
+                        title: 'The Dark Knight',
+                        description: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological tests.',
+                        genre: 'ACTION',
+                        durationMinutes: 152,
+                        rating: 'PG_13',
+                        posterUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+                        releaseDate: '2024-02-01T00:00:00',
+                        endDate: '2024-04-01T00:00:00',
+                        director: 'Prashanth Neel',
+                        cast: 'Yash, Sanjay Dutt, Raveena Tandon',
+                        language: 'Kannada',
+                        isActive: true,
+                        isFeatured: false,
+                        createdAt: '2024-01-15T00:00:00'
+                    },
+                    {
+                        id: 3,
+                        title: 'Inception',
+                        description: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.',
+                        genre: 'SCI_FI',
+                        durationMinutes: 148,
+                        rating: 'PG_13',
+                        posterUrl: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+                        releaseDate: '2024-03-01T00:00:00',
+                        endDate: '2024-05-01T00:00:00',
+                        director: 'S.S. Rajamouli',
+                        cast: 'N.T. Rama Rao Jr., Ram Charan, Alia Bhatt',
+                        language: 'Telugu',
+                        isActive: true,
+                        isFeatured: true,
+                        createdAt: '2024-02-01T00:00:00'
+                    }
+                ];
+                
+                movies = mockMovies;
+                filteredMovies = [...movies];
+                displayMovies();
+            }
+        }
+
+        function displayMovies() {
+            const grid = document.getElementById('moviesGrid');
+            const count = document.getElementById('movieCount');
+            
+            count.textContent = `${filteredMovies.length} movies found`;
+            
+            if (filteredMovies.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-400">
+                        No movies found
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredMovies.map(movie => `
+                <div class="movie-card rounded-lg p-4">
+                    <div class="aspect-w-2 aspect-h-3 mb-4">
+                        <img src="${movie.posterUrl}" 
+                             alt="${movie.title}" 
+                             class="w-full h-64 object-cover rounded-lg"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iIzJBMkEyQSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gUG9zdGVyPC90ZXh0Pgo8L3N2Zz4='">
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="text-lg font-semibold text-white truncate">${movie.title}</h4>
+                        <p class="text-sm text-gray-400">${movie.genre} • ${movie.rating} • ${Math.floor(movie.durationMinutes / 60)}h ${movie.durationMinutes % 60}m</p>
+                        <p class="text-xs text-gray-500 line-clamp-2">${movie.description || 'No description available'}</p>
+                        <div class="flex items-center justify-between pt-2">
+                            <div class="flex space-x-1">
+                                ${movie.isFeatured ? '<span class="px-2 py-1 bg-bms-red text-white text-xs rounded-full">Featured</span>' : ''}
+                                <span class="px-2 py-1 ${movie.isActive ? 'bg-green-600' : 'bg-red-600'} text-white text-xs rounded-full">
+                                    ${movie.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="editMovie(${movie.id})" class="text-blue-400 hover:text-blue-300 text-sm">Edit</button>
+                                <button onclick="toggleMovieStatus(${movie.id})" class="text-yellow-400 hover:text-yellow-300 text-sm">
+                                    ${movie.isActive ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button onclick="deleteMovie(${movie.id})" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterMovies() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const genreFilter = document.getElementById('genreFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredMovies = movies.filter(movie => {
+                const matchesSearch = movie.title.toLowerCase().includes(searchTerm);
+                const matchesGenre = !genreFilter || movie.genre === genreFilter;
+                const matchesRating = !ratingFilter || movie.rating === ratingFilter;
+                const matchesStatus = !statusFilter || 
+                    (statusFilter === 'true' && movie.isActive) ||
+                    (statusFilter === 'false' && !movie.isActive) ||
+                    (statusFilter === 'featured' && movie.isFeatured);
+
+                return matchesSearch && matchesGenre && matchesRating && matchesStatus;
+            });
+
+            displayMovies();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('genreFilter').value = '';
+            document.getElementById('ratingFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            
+            filteredMovies = [...movies];
+            displayMovies();
+        }
+
+        function refreshMovies() {
+            // Clear all filters first
+            clearFilters();
+            
+            // Reload data
+            loadMovies();
+        }
+
+        function showExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function exportMovies(format) {
+            // Hide the menu
+            document.getElementById('exportMenu').classList.add('hidden');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Exporting...';
+            button.disabled = true;
+            
+            // Make the export request
+            const url = `/api/admin/export/movies/${format}`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `movies_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                // Show professional success message
+                window.notificationSystem.success(
+                    'The movie data has been exported successfully and downloaded to your device.',
+                    {
+                        title: 'Export Complete',
+                        duration: 4000
+                    }
+                );
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                window.notificationSystem.error(
+                    'Unable to export the movie data. Please try again or contact support if the issue persists.',
+                    {
+                        title: 'Export Failed',
+                        duration: 6000
+                    }
+                );
+            })
+            .finally(() => {
+                // Reset button state
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Close export menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const exportMenu = document.getElementById('exportMenu');
+            const exportButton = event.target.closest('[onclick="showExportMenu()"]');
+            
+            if (!exportButton && !exportMenu.contains(event.target)) {
+                exportMenu.classList.add('hidden');
+            }
+        });
+
+        function openAddMovieModal() {
+            const modal = document.getElementById('movieModal');
+            const userMenu = document.getElementById('userMenu');
+            
+            // Hide dropdown if open
+            if (userMenu && !userMenu.classList.contains('hidden')) {
+                userMenu.classList.add('hidden');
+                document.getElementById('userMenuButton').classList.remove('ring-2', 'ring-bms-red');
+            }
+            
+            // Add modal-open class to body
+            document.body.classList.add('modal-open');
+            
+            // Show modal
+            document.getElementById('modalTitle').textContent = 'Add New Movie';
+            document.getElementById('movieForm').reset();
+            document.getElementById('movieId').value = '';
+            modal.style.display = 'block';
+        }
+
+        function editMovie(movieId) {
+            const movie = movies.find(m => m.id === movieId);
+            if (!movie) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Movie';
+            document.getElementById('movieId').value = movie.id;
+            document.getElementById('movieTitle').value = movie.title;
+            document.getElementById('movieDescription').value = movie.description || '';
+            document.getElementById('movieGenre').value = movie.genre;
+            document.getElementById('movieRating').value = movie.rating;
+            document.getElementById('movieDuration').value = movie.durationMinutes;
+            document.getElementById('movieDirector').value = movie.director || '';
+            document.getElementById('movieCast').value = movie.cast || '';
+            document.getElementById('movieLanguage').value = movie.language || '';
+            document.getElementById('moviePosterUrl').value = movie.posterUrl || '';
+            document.getElementById('movieIsActive').checked = movie.isActive;
+            document.getElementById('movieIsFeatured').checked = movie.isFeatured;
+            
+            // Format dates for datetime-local input
+            if (movie.releaseDate) {
+                document.getElementById('movieReleaseDate').value = new Date(movie.releaseDate).toISOString().slice(0, 16);
+            }
+            if (movie.endDate) {
+                document.getElementById('movieEndDate').value = new Date(movie.endDate).toISOString().slice(0, 16);
+            }
+
+            document.getElementById('movieModal').style.display = 'block';
+        }
+
+        function closeMovieModal() {
+            const modal = document.getElementById('movieModal');
+            
+            // Remove modal-open class from body
+            document.body.classList.remove('modal-open');
+            
+            // Hide modal
+            modal.style.display = 'none';
+            
+            // Clean up URL if we came from the add action
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'add') {
+                // Remove the action parameter from URL
+                urlParams.delete('action');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+        }
+
+        async function toggleMovieStatus(movieId) {
+            const movie = movies.find(m => m.id === movieId);
+            const movieTitle = movie ? movie.title : 'this movie';
+            const currentStatus = movie ? (movie.isActive ? 'active' : 'inactive') : 'unknown';
+            const newStatus = movie ? (movie.isActive ? 'inactive' : 'active') : 'unknown';
+            
+            if (confirm(`Are you sure you want to change the status of "${movieTitle}"?\n\nCurrent status: ${currentStatus}\nNew status: ${newStatus}\n\nThis will affect the movie's availability for bookings.`)) {
+                try {
+                    const response = await fetch(`/api/movies/${movieId}/toggle-status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Show professional success message
+                        window.notificationSystem.success(
+                            'The movie status has been updated successfully.',
+                            {
+                                title: 'Status Updated',
+                                duration: 4000
+                            }
+                        );
+                        loadMovies(); // Refresh the list
+                    } else {
+                        let errorMessage = 'Unable to update movie status. Please try again.';
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            // If response is not JSON, use default message
+                        }
+                        
+                        window.notificationSystem.error(
+                            errorMessage,
+                            {
+                                title: 'Update Failed',
+                                duration: 6000
+                            }
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error toggling movie status:', error);
+                    window.notificationSystem.error(
+                        'A network error occurred. Please check your connection and try again.',
+                        {
+                            title: 'Connection Error',
+                            duration: 0 // Don't auto-hide network errors
+                        }
+                    );
+                }
+            }
+        }
+
+        async function deleteMovie(movieId) {
+            const movie = movies.find(m => m.id === movieId);
+            const movieTitle = movie ? movie.title : 'this movie';
+            
+            if (confirm(`Are you sure you want to remove "${movieTitle}" from the system?\n\nThis action will deactivate the movie and it will no longer be available for bookings. This action cannot be undone.`)) {
+                try {
+                    const response = await fetch(`/api/movies/${movieId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Show professional success message
+                        window.notificationSystem.success(
+                            'The movie has been removed from the system successfully.',
+                            {
+                                title: 'Movie Deleted',
+                                duration: 4000
+                            }
+                        );
+                        loadMovies(); // Refresh the list
+                    } else {
+                        let errorMessage = 'Unable to delete the movie. Please try again.';
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            // If response is not JSON, use default message
+                        }
+                        
+                        window.notificationSystem.error(
+                            errorMessage,
+                            {
+                                title: 'Deletion Failed',
+                                duration: 6000
+                            }
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error deleting movie:', error);
+                    window.notificationSystem.error(
+                        'A network error occurred. Please check your connection and try again.',
+                        {
+                            title: 'Connection Error',
+                            duration: 0 // Don't auto-hide network errors
+                        }
+                    );
+                }
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterMovies);
+        document.getElementById('genreFilter').addEventListener('change', filterMovies);
+        document.getElementById('ratingFilter').addEventListener('change', filterMovies);
+        document.getElementById('statusFilter').addEventListener('change', filterMovies);
+
+        document.getElementById('movieForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const movieId = document.getElementById('movieId').value;
+            const isEdit = movieId && movieId !== '';
+            
+            // Fix date formatting to avoid double T issue
+            const releaseDateValue = document.getElementById('movieReleaseDate').value;
+            const endDateValue = document.getElementById('movieEndDate').value;
+            
+            // Ensure proper LocalDateTime format
+            const releaseDate = releaseDateValue.includes('T') ? releaseDateValue : releaseDateValue + 'T00:00:00';
+            const endDate = endDateValue.includes('T') ? endDateValue : endDateValue + 'T00:00:00';
+            
+            const movieData = {
+                title: document.getElementById('movieTitle').value,
+                description: document.getElementById('movieDescription').value,
+                genre: document.getElementById('movieGenre').value,
+                durationMinutes: parseInt(document.getElementById('movieDuration').value),
+                rating: document.getElementById('movieRating').value,
+                posterUrl: document.getElementById('moviePosterUrl').value,
+                releaseDate: releaseDate,
+                endDate: endDate,
+                director: document.getElementById('movieDirector').value,
+                cast: document.getElementById('movieCast').value,
+                language: document.getElementById('movieLanguage').value,
+                isActive: document.getElementById('movieIsActive').checked,
+                isFeatured: document.getElementById('movieIsFeatured').checked
+            };
+            
+            console.log('Sending movie data:', movieData);
+
+            try {
+                const url = isEdit ? `/api/movies/${movieId}` : '/api/movies';
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(movieData)
+                });
+
+                if (response.ok) {
+                    closeMovieModal();
+                    loadMovies(); // Refresh the list
+                    
+                    // Show professional success message
+                    window.notificationSystem.success(
+                        isEdit ? 'The movie information has been updated successfully.' : 'The new movie has been added to the system successfully.',
+                        {
+                            title: isEdit ? 'Movie Updated' : 'Movie Added',
+                            duration: 4000
+                        }
+                    );
+                } else {
+                    let errorMessage = isEdit ? 'Unable to update the movie. Please check your input and try again.' : 'Unable to add the movie. Please check your input and try again.';
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (e) {
+                        // If response is not JSON, use default message
+                    }
+                    
+                    window.notificationSystem.error(
+                        errorMessage,
+                        {
+                            title: isEdit ? 'Update Failed' : 'Addition Failed',
+                            duration: 6000
+                        }
+                    );
+                }
+            } catch (error) {
+                console.error('Error saving movie:', error);
+                window.notificationSystem.error(
+                    'A network error occurred. Please check your connection and try again.',
+                    {
+                        title: 'Connection Error',
+                        duration: 0 // Don't auto-hide network errors
+                    }
+                );
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('movieModal');
+            if (event.target === modal) {
+                closeMovieModal();
+            }
+        };
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('movieModal');
+                if (modal && modal.style.display === 'block') {
+                    closeMovieModal();
+                }
+            }
+        });
+
+        // Load movies on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMovies();
+            
+            // Check if we should open the add movie modal
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'add') {
+                // Small delay to ensure page is fully loaded
+                setTimeout(() => {
+                    openAddMovieModal();
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
