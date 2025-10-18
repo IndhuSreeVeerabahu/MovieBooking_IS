@@ -49,8 +49,12 @@ RUN ls -la target/
 EXPOSE 8080
 
 # Set environment variables for runtime
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Run the application
-CMD ["sh", "-c", "java $JAVA_OPTS -jar target/MovieTicketBooking-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod"]
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Run the application with optimized startup
+CMD ["sh", "-c", "java $JAVA_OPTS -jar target/MovieTicketBooking-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod --server.port=8080"]
