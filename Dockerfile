@@ -49,7 +49,7 @@ RUN ls -la target/
 EXPOSE 8080
 
 # Set environment variables for runtime
-ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication -Djdk.internal.platform.cgroupfs.disabled=true"
 ENV SPRING_PROFILES_ACTIVE=prod
 
 # Install curl for health checks
