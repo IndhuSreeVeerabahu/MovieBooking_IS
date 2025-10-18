@@ -53,7 +53,7 @@ public class Movie {
     @Column(name = "director", length = 255)
     private String director;
 
-    @Column(name = "cast", columnDefinition = "TEXT")
+    @Column(name = "\"cast\"", columnDefinition = "TEXT")
     private String cast;
 
     @Column(name = "language", length = 50)
