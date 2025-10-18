@@ -22,8 +22,8 @@ RUN ./mvnw dependency:tree
 # Copy source code
 COPY src src
 
-# Build the application
-RUN ./mvnw clean package -DskipTests -Dspring.profiles.active=prod
+# Build the application with skip tests and no database connection required
+RUN ./mvnw clean package -DskipTests -Dspring.profiles.active=prod -Dspring.datasource.url=jdbc:h2:mem:testdb -Dspring.datasource.driver-class-name=org.h2.Driver -Dspring.jpa.hibernate.ddl-auto=create-drop
 
 # Debug: Show what was built
 RUN ls -la target/
