@@ -1,5 +1,5 @@
 {
-  "DATABASE_URL": "postgresql://postgres:nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk@shortline.proxy.rlwy.net:54041/railway",
+  "DATABASE_URL": "jdbc:postgresql://postgres:nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk@shortline.proxy.rlwy.net:54041/railway",
   "DB_USERNAME": "postgres",
   "DB_PASSWORD": "nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk",
   "JWT_SECRET": "MovieHub2024!SecureJWTKey#RailwayDeploy$SpringBoot3&PostgreSQL@IndhuSree",
