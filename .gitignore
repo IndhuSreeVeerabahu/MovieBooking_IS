@@ -31,3 +31,26 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment and Secrets ###
+.env
+.env.local
+.env.production
+.env.staging
+application-local.properties
+application-dev.properties
+*.key
+*.pem
+*.p12
+
+### Logs ###
+logs/
+*.log
+*.log.*
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Railway ###
+.railway/
