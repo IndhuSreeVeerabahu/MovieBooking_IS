@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bookings - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
     <link rel="stylesheet" href="/css/validation.css">
     <script src="/js/notification-system.js"></script>
     <script>
@@ -98,7 +99,7 @@
                 
                 <!-- User Menu -->
                 <div class="flex items-center space-x-4">
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-bms-red transition-colors">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-sm font-semibold" th:text="${user.firstName.charAt(0)}">U</span>
@@ -107,7 +108,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-600" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <div class="py-1">
                                 <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
                                     Dashboard
@@ -129,7 +130,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Header -->
         <div class="mb-8">
@@ -159,40 +159,41 @@
 
         <!-- Bookings List -->
         <div id="bookingsList" class="space-y-6">
-            <!-- Sample Booking Cards -->
-            <div class="booking-card p-6" data-status="confirmed">
+            <!-- Dynamic Booking Cards -->
+            <div th:each="booking : ${bookings}" 
+                 th:class="'booking-card p-6'" 
+                 th:data-status="${booking.bookingStatus.toString().toLowerCase()}">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                     <div class="flex items-start space-x-4 mb-4 lg:mb-0">
                         <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNGODQ0NjQiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1vdmllPC90ZXh0Pgo8L3N2Zz4=" 
                              alt="Movie Poster" class="w-16 h-24 object-cover rounded-lg">
                         <div class="flex-1">
                             <div class="flex items-center space-x-3 mb-2">
-                                <h3 class="text-xl font-semibold text-white">Salaar 2</h3>
-                                <span class="status-confirmed text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                    Confirmed
-                                </span>
+                                <h3 class="text-xl font-semibold text-white" th:text="${booking.movieTitle}">Movie Title</h3>
+                                <span th:class="'status-' + ${booking.bookingStatus.toString().toLowerCase()} + ' text-white px-2 py-1 rounded-full text-xs font-semibold'"
+                                      th:text="${booking.bookingStatus}">Confirmed</span>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                                 <div>
-                                    <p><span class="text-gray-400">Theater:</span> CineMax Theater</p>
-                                    <p><span class="text-gray-400">Screen:</span> Screen 1</p>
-                                    <p><span class="text-gray-400">Date:</span> Dec 15, 2024</p>
+                                    <p><span class="text-gray-400">Theater:</span> <span th:text="${booking.theaterName}">Theater Name</span></p>
+                                    <p><span class="text-gray-400">Date:</span> <span th:text="${#temporals.format(booking.showDateTime, 'MMM dd, yyyy')}">Date</span></p>
+                                    <p><span class="text-gray-400">Time:</span> <span th:text="${#temporals.format(booking.showDateTime, 'HH:mm')}">Time</span></p>
                                 </div>
                                 <div>
-                                    <p><span class="text-gray-400">Time:</span> 7:00 PM</p>
-                                    <p><span class="text-gray-400">Seats:</span> A1, A2</p>
-                                    <p><span class="text-gray-400">Amount:</span> ₹935.00</p>
+                                    <p><span class="text-gray-400">Seats:</span> <span th:text="${#strings.listJoin(booking.seatNumbers, ', ')}">Seats</span></p>
+                                    <p><span class="text-gray-400">Amount:</span> <span th:text="'₹' + ${booking.totalAmount}">Amount</span></p>
+                                    <p><span class="text-gray-400">Payment:</span> <span th:text="${booking.paymentStatus}">Payment Status</span></p>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-400 mt-2">Booking Reference: BOOK123456</p>
+                            <p class="text-xs text-gray-400 mt-2">Booking Reference: <span th:text="${booking.bookingReference}">Reference</span></p>
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <button onclick="viewBookingDetails('BOOK123456')" 
-                                class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <a th:href="@{'/booking/confirmation?bookingReference=' + ${booking.bookingReference}}" 
+                           class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center">
                             View Details
-                        </button>
-                        <button onclick="downloadTicket('BOOK123456')" 
+                        </a>
+                        <button onclick="downloadTicket('[[${booking.bookingReference}]]')" 
                                 class="border border-bms-red text-bms-red hover:bg-bms-red hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                             Download
                         </button>
@@ -200,87 +201,10 @@
                 </div>
             </div>
 
-            <div class="booking-card p-6" data-status="pending">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="flex items-start space-x-4 mb-4 lg:mb-0">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNGODQ0NjQiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1vdmllPC90ZXh0Pgo8L3N2Zz4=" 
-                             alt="Movie Poster" class="w-16 h-24 object-cover rounded-lg">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-2">
-                                <h3 class="text-xl font-semibold text-white">KGF 3</h3>
-                                <span class="status-pending text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                    Pending Payment
-                                </span>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
-                                <div>
-                                    <p><span class="text-gray-400">Theater:</span> PVR Cinemas</p>
-                                    <p><span class="text-gray-400">Screen:</span> Screen 3</p>
-                                    <p><span class="text-gray-400">Date:</span> Dec 16, 2024</p>
-                                </div>
-                                <div>
-                                    <p><span class="text-gray-400">Time:</span> 9:30 PM</p>
-                                    <p><span class="text-gray-400">Seats:</span> B5, B6</p>
-                                    <p><span class="text-gray-400">Amount:</span> ₹850.00</p>
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-2">Booking Reference: BOOK123457</p>
-                            <p class="text-xs text-yellow-400 mt-1">⏰ Payment expires in 15 minutes</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <button onclick="completePayment('BOOK123457')" 
-                                class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Complete Payment
-                        </button>
-                        <button onclick="cancelBooking('BOOK123457')" 
-                                class="border border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="booking-card p-6" data-status="cancelled">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="flex items-start space-x-4 mb-4 lg:mb-0">
-                        <img src="https://via.placeholder.com/80x120/f84464/ffffff?text=Movie" 
-                             alt="Movie Poster" class="w-16 h-24 object-cover rounded-lg opacity-50">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-2">
-                                <h3 class="text-xl font-semibold text-gray-400">Black Widow</h3>
-                                <span class="status-cancelled text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                    Cancelled
-                                </span>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
-                                <div>
-                                    <p><span class="text-gray-500">Theater:</span> INOX</p>
-                                    <p><span class="text-gray-500">Screen:</span> Screen 2</p>
-                                    <p><span class="text-gray-500">Date:</span> Dec 10, 2024</p>
-                                </div>
-                                <div>
-                                    <p><span class="text-gray-500">Time:</span> 6:00 PM</p>
-                                    <p><span class="text-gray-500">Seats:</span> C3, C4</p>
-                                    <p><span class="text-gray-500">Amount:</span> ₹750.00</p>
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2">Booking Reference: BOOK123458</p>
-                            <p class="text-xs text-gray-500 mt-1">Refund processed</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <button onclick="viewBookingDetails('BOOK123458')" 
-                                class="border border-gray-600 text-gray-400 hover:bg-gray-600 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            View Details
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Empty State -->
-        <div id="emptyState" class="hidden text-center py-12">
+        <div id="emptyState" th:if="${#lists.isEmpty(bookings)}" class="text-center py-12">
             <div class="w-24 h-24 bg-bms-gray rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -346,7 +270,6 @@
             }
         }
 
-        // View booking details
         function viewBookingDetails(bookingRef) {
             window.location.href = `/booking/confirmation?bookingReference=${bookingRef}`;
         }

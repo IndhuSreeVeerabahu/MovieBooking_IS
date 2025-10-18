@@ -1,6 +1,10 @@
 package com.example.MovieTicketBooking.controller;
 
-import com.example.MovieTicketBooking.dto.*;
+import com.example.MovieTicketBooking.dto.BookingResponse;
+import com.example.MovieTicketBooking.dto.CreateBookingRequest;
+import com.example.MovieTicketBooking.dto.SeatLayoutResponse;
+import com.example.MovieTicketBooking.dto.SeatLockResponse;
+import com.example.MovieTicketBooking.dto.ShowResponse;
 import com.example.MovieTicketBooking.service.BookingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -209,7 +214,6 @@ public class BookingController {
         }
     }
 }
-
 // DTO for locking seats
 @lombok.Data
 @lombok.Builder
@@ -225,3 +229,4 @@ class LockSeatsRequest {
     @NotEmpty(message = "Seat IDs are required")
     private List<Long> seatIds;
 }
+

@@ -5,15 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MovieHub - Book Your Movie Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fallback Tailwind CDN -->
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
+    <script src="/js/notification-system.js"></script>
     <script>
-        // Fallback Tailwind CDN if the primary one fails
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.notificationSystem) {
+                setTimeout(() => {
+                    window.notificationSystem.info('Welcome to MovieHub! 🎬', {
+                        title: 'Welcome',
+                        duration: 3000
+                    });
+                }, 1000);
+            }
+        });
+    </script>
+    <script>
         if (typeof tailwind === 'undefined') {
             const fallbackScript = document.createElement('script');
             fallbackScript.src = 'https://unpkg.com/tailwindcss@3.4.0/lib/tailwind.min.js';
-            fallbackScript.onerror = function() {
-                console.log('Primary Tailwind CDN failed, using local fallback styles');
-            };
             document.head.appendChild(fallbackScript);
         }
     </script>
@@ -32,9 +42,7 @@
             }
         }
     </script>
-    <!-- Fallback styles in case Tailwind doesn't load -->
     <style>
-        /* Fallback styles for critical elements */
         body {
             background-color: #1A1A1A !important;
             color: #FFFFFF !important;
@@ -705,7 +713,7 @@
                 </div>
                 
                 <!-- Authentication Section -->
-                <div th:if="${isAuthenticated}" class="relative" id="userProfile" style="z-index: 99999 !important;">
+                <div th:if="${isAuthenticated}" class="relative" id="userProfile">
                     <div class="flex items-center space-x-4">
                         <!-- User Info -->
                         <div class="flex items-center space-x-3 cursor-pointer" onclick="toggleProfileDropdown()">
@@ -722,7 +730,7 @@
                         </div>
                         
                         <!-- Dropdown Menu -->
-                        <div id="profileDropdown" class="absolute right-0 top-full mt-2 w-48 bg-bms-gray border border-gray-700 rounded-lg shadow-lg hidden" style="z-index: 99999 !important;">
+                        <div id="profileDropdown" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1" style="position: absolute; z-index: 9999; background: #2A2A2A; border: 1px solid #374151; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             <div class="py-2">
                                 <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">Dashboard</a>
                                 <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-gray/50 hover:text-white transition-colors">My Bookings</a>
@@ -959,9 +967,7 @@
     <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
     <div class="fixed top-1/2 left-1/4 w-16 h-16 bg-bms-red/10 rounded-full blur-lg"></div>
     
-    <!-- Script to ensure Tailwind loads and apply fallback styles -->
     <script>
-        // Check if Tailwind CSS has loaded
         function checkTailwindLoaded() {
             const testElement = document.createElement('div');
             testElement.className = 'bg-red-500';
@@ -976,12 +982,9 @@
             return hasTailwind;
         }
         
-        // Apply fallback styles if Tailwind hasn't loaded
         function applyFallbackStyles() {
             if (!checkTailwindLoaded()) {
-                console.log('Tailwind CSS not detected, applying fallback styles...');
                 
-                // Force apply critical styles
                 const style = document.createElement('style');
                 style.textContent = `
                     body { 
@@ -1141,18 +1144,14 @@
             }
         }
         
-        // Run the check when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait a bit for Tailwind to potentially load
             setTimeout(applyFallbackStyles, 100);
         });
         
-        // Also run on window load as a backup
         window.addEventListener('load', function() {
             setTimeout(applyFallbackStyles, 200);
         });
 
-        // Handle profile dropdown toggle
         function toggleProfileDropdown() {
             const dropdown = document.getElementById('profileDropdown');
             if (dropdown) {

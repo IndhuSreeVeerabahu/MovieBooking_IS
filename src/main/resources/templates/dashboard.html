@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Movie Ticket Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
+    <script src="/js/notification-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.notificationSystem) {
+                setTimeout(() => {
+                    window.notificationSystem.success('Dashboard loaded successfully! 📊', {
+                        title: 'Dashboard Ready',
+                        duration: 3000
+                    });
+                }, 1000);
+            } else {
+                console.error('Dashboard - Notification system not available!');
+            }
+        });
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -124,7 +140,7 @@
                         <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
                         <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
                     </div>
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">U</span>
@@ -132,7 +148,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1 opacity-100" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1" style="position: absolute; z-index: 9999; background: #2A2A2A; border: 1px solid #374151; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Profile</a>
                             <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Bookings</a>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Settings</a>
@@ -155,7 +171,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Section -->
         <div class="mb-8 text-center">
@@ -279,19 +294,43 @@
     <script>
         function toggleUserMenu() {
             const menu = document.getElementById('userMenu');
+            const button = document.querySelector('button[onclick="toggleUserMenu()"]');
+            
             if (menu) {
                 menu.classList.toggle('hidden');
+                
+                // Add visual feedback
+                if (menu.classList.contains('hidden')) {
+                    button.classList.remove('ring-2', 'ring-bms-red');
+                } else {
+                    button.classList.add('ring-2', 'ring-bms-red');
+                }
             }
         }
 
         // Close menu when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('userMenu');
-            const button = event.target.closest('button');
+            const button = event.target.closest('button[onclick="toggleUserMenu()"]');
             const menuElement = event.target.closest('#userMenu');
             
             if (menu && !button && !menuElement) {
                 menu.classList.add('hidden');
+                const buttonElement = document.querySelector('button[onclick="toggleUserMenu()"]');
+                if (buttonElement) {
+                    buttonElement.classList.remove('ring-2', 'ring-bms-red');
+                }
+            }
+        });
+
+        // Add event listener to the button for better interaction
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.querySelector('button[onclick="toggleUserMenu()"]');
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserMenu();
+                });
             }
         });
 

@@ -4,7 +4,8 @@ import com.example.MovieTicketBooking.dto.*;
 import com.example.MovieTicketBooking.entity.*;
 import com.example.MovieTicketBooking.repository.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +18,11 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 @Transactional
 public class BookingService {
 
+    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
+    
     private final BookingRepository bookingRepository;
     private final ShowRepository showRepository;
     private final SeatRepository seatRepository;
@@ -102,7 +104,7 @@ public class BookingService {
                                 return SeatLayoutResponse.SeatInfo.builder()
                                         .seatId(seat.getId())
                                         .seatIdentifier(seat.getSeatIdentifier())
-                                        .seatType(seat.getSeatType().getDisplayName())
+                                        .seatType(seat.getSeatType().name()) // Use enum name (PREMIUM, VIP) instead of display name
                                         .status(isBooked ? "BOOKED" : (isLocked ? "LOCKED" : "AVAILABLE"))
                                         .isActive(seat.getIsActive())
                                         .rowNumber(seat.getRowNumber())
@@ -115,7 +117,7 @@ public class BookingService {
                             .rowNumber(rowNumber)
                             .rowLetter(getRowLetter(rowNumber))
                             .seatsPerRow(rowSeats.size())
-                            .seatType(rowSeats.get(0).getSeatType().getDisplayName())
+                            .seatType(rowSeats.get(0).getSeatType().name())
                             .hasAisle(false)
                             .aislePosition(null)
                             .seats(seatInfos)
@@ -127,7 +129,7 @@ public class BookingService {
         // Count seat types
         Map<String, Integer> seatTypeCounts = seats.stream()
                 .collect(Collectors.groupingBy(
-                        seat -> seat.getSeatType().getDisplayName(),
+                        seat -> seat.getSeatType().name(),
                         Collectors.collectingAndThen(Collectors.counting(), Math::toIntExact)
                 ));
 
@@ -152,6 +154,7 @@ public class BookingService {
                         .filter(seat -> lockedSeatIds.contains(seat.getId()))
                         .map(Seat::getSeatIdentifier)
                         .collect(Collectors.toList()))
+                .show(mapToShowResponse(show))
                 .build();
     }
 
@@ -257,6 +260,7 @@ public class BookingService {
                 .taxAmount(request.getTaxAmount())
                 .bookingDate(LocalDateTime.now())
                 .expiryTime(LocalDateTime.now().plusMinutes(30)) // 30 minutes to complete payment
+                .bookingStatus(Booking.BookingStatus.PENDING)
                 .build();
 
         final Booking savedBooking = bookingRepository.save(booking);
@@ -296,12 +300,18 @@ public class BookingService {
             throw new RuntimeException("Booking has expired");
         }
 
+        log.info("Before confirmation - Booking Status: {}, Payment Status: {}", 
+            booking.getBookingStatus(), booking.getPaymentStatus());
+        
         booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
         booking.setPaymentStatus(Booking.PaymentStatus.COMPLETED);
         booking.setPaymentReference(paymentReference);
         booking.setPaymentMethod(paymentMethod);
 
         booking = bookingRepository.save(booking);
+        
+        log.info("After confirmation - Booking Status: {}, Payment Status: {}", 
+            booking.getBookingStatus(), booking.getPaymentStatus());
 
         // Send confirmation email
         try {
@@ -457,6 +467,12 @@ public class BookingService {
     }
 
     private BookingResponse mapToBookingResponse(Booking booking) {
+        // Get seat numbers for this booking
+        List<String> seatNumbers = bookingSeatRepository.findByBookingId(booking.getId())
+                .stream()
+                .map(bookingSeat -> bookingSeat.getSeat().getSeatIdentifier())
+                .collect(Collectors.toList());
+        
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingReference(booking.getBookingReference())
@@ -474,6 +490,7 @@ public class BookingService {
                 .paymentMethod(booking.getPaymentMethod())
                 .bookingDate(booking.getBookingDate())
                 .expiryTime(booking.getExpiryTime())
+                .seatNumbers(seatNumbers)
                 .build();
     }
 

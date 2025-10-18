@@ -19,7 +19,18 @@ class NotificationSystem {
         this.container = document.createElement('div');
         this.container.id = 'notification-container';
         this.container.className = 'fixed top-4 right-4 z-50 space-y-2';
-        document.body.appendChild(this.container);
+        
+        // Wait for document.body to be available
+        if (document.body) {
+            document.body.appendChild(this.container);
+        } else {
+            // If document.body is not ready, wait for DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', () => {
+                if (document.body) {
+                    document.body.appendChild(this.container);
+                }
+            });
+        }
     }
     
     addStyles() {
@@ -203,7 +214,21 @@ class NotificationSystem {
         };
         
         const notification = this.createNotification(message, config);
-        this.container.appendChild(notification);
+        
+        // Ensure container exists before appending
+        if (this.container && document.body.contains(this.container)) {
+            this.container.appendChild(notification);
+        } else {
+            // If container doesn't exist, create it first
+            this.createContainer();
+            if (this.container) {
+                this.container.appendChild(notification);
+            } else {
+                console.error('Failed to create notification container');
+                return null;
+            }
+        }
+        
         this.notifications.push(notification);
         
         // Trigger animation
@@ -402,8 +427,19 @@ class NotificationSystem {
     }
 }
 
-// Create global instance
-window.notificationSystem = new NotificationSystem();
+// Create global instance with proper initialization
+document.addEventListener('DOMContentLoaded', function() {
+    if (!window.notificationSystem) {
+        window.notificationSystem = new NotificationSystem();
+        console.log('Notification system initialized on DOM ready');
+    }
+});
+
+// Also try immediate initialization as fallback
+if (!window.notificationSystem) {
+    window.notificationSystem = new NotificationSystem();
+    console.log('Notification system initialized immediately');
+}
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {

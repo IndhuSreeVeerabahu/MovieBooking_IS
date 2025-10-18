@@ -1,23 +1,57 @@
 /**
- * Admin UI Fixes - Minimal Z-Index Fixes Only
- * Fixes specific overlap issues without breaking existing styling
+ * Admin UI Fixes - Dropdown and Z-Index Fixes
+ * Fixes dropdown positioning and z-index issues throughout the application
  */
 
 /* Proper z-index hierarchy */
 :root {
     --z-dropdown: 1000;
+    --z-export-dropdown: 1001;
     --z-modal: 2000;
     --z-modal-backdrop: 1999;
 }
 
-/* Fix dropdown positioning - only target the specific issue */
-#userMenu {
+/* Base dropdown menu styles */
+.dropdown-menu {
     position: absolute !important;
     z-index: var(--z-dropdown) !important;
+    background: #2A2A2A !important;
+    border: 1px solid #374151 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+    min-width: 12rem !important;
+}
+
+/* Fix user menu dropdown positioning */
+#userMenu {
+    position: absolute !important;
+    z-index: 99999 !important;
     top: 100% !important;
     right: 0 !important;
     left: auto !important;
     bottom: auto !important;
+    margin-top: 0.25rem !important;
+    background: #2A2A2A !important;
+    border: 1px solid #374151 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+    min-width: 12rem !important;
+    transform: translateY(0) !important;
+}
+
+/* Fix export menu dropdown positioning */
+#exportMenu {
+    position: absolute !important;
+    z-index: 9998 !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin-top: 0.5rem !important;
+    background: #2A2A2A !important;
+    border: 1px solid #374151 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* When modal is open, hide dropdown */
@@ -38,10 +72,78 @@ body.modal-open {
     z-index: var(--z-modal) !important;
 }
 
+/* Ensure dropdown containers have proper positioning */
+.relative {
+    position: relative !important;
+}
+
+/* Fix dropdown click areas */
+.dropdown-menu a,
+.dropdown-menu button {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    padding: 0.5rem 1rem !important;
+    color: #D1D5DB !important;
+    text-decoration: none !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+    background-color: #374151 !important;
+    color: #FFFFFF !important;
+}
+
 /* Responsive adjustments for dropdown */
 @media (max-width: 768px) {
     #userMenu {
         right: -1rem !important;
         width: 180px !important;
     }
+    
+    #exportMenu {
+        right: -1rem !important;
+        width: 200px !important;
+    }
+}
+
+/* Fix for any overlapping elements */
+.dropdown-menu {
+    pointer-events: auto !important;
+}
+
+/* Ensure proper stacking context */
+.dropdown-menu * {
+    position: relative !important;
+    z-index: inherit !important;
+}
+
+/* Specific fix for profile dropdown */
+#profileDropdown {
+    position: absolute !important;
+    z-index: 10000 !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin-top: 0.5rem !important;
+    background: #2A2A2A !important;
+    border: 1px solid #374151 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+    min-width: 12rem !important;
+}
+
+/* Ensure user dropdown appears above export button */
+#userMenu {
+    z-index: 99999 !important;
+}
+
+/* Ensure export menu appears below user dropdown */
+#exportMenu {
+    z-index: 9998 !important;
 }

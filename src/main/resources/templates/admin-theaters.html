@@ -126,7 +126,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-1 w-48 rounded-lg py-1" style="position: absolute; z-index: 99999; background: #2A2A2A; border: 1px solid #374151; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Admin Dashboard</a>
                             <a href="/admin/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Movie Management</a>
                             <a href="/admin/users" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">User Management</a>
@@ -147,7 +147,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
@@ -548,7 +547,6 @@
                     populateCityFilter();
                 } else {
                     console.error('Failed to load theaters');
-                    // Fallback to mock data if API fails
                     theaters = [
                         {
                             id: 1,
@@ -714,7 +712,6 @@
         }
 
         function hideEditTheaterModal() {
-            console.log('Attempting to close edit theater modal...');
             const modal = document.getElementById('editTheaterModal');
             
             if (modal) {
@@ -787,7 +784,6 @@
                         duration: 4000
                     });
                 } else {
-                    // Try to get detailed error message from response
                     let errorMessage = 'Failed to add theater. Please try again.';
                     try {
                         const errorData = await response.json();
@@ -903,7 +899,6 @@
                 } else {
                     console.error('Failed to update theater, status:', response.status);
                     
-                    // Try to get detailed error message from response
                     let errorMessage = 'Failed to update theater. Please try again.';
                     try {
                         const errorData = await response.json();
@@ -1000,13 +995,25 @@
         }
 
         async function deleteTheater(theaterId) {
+            
             try {
                 // First check if theater can be deleted
+                console.log('Checking if theater can be deleted...');
                 const statusResponse = await fetch(`/api/theaters/${theaterId}/can-delete`);
                 const statusData = await statusResponse.json();
+                console.log('Can delete response:', statusData);
                 
                 if (!statusData.canDelete) {
-                    window.notificationSystem.error(statusData.message, {
+                    // Create a more descriptive error message
+                    let errorMessage = statusData.message || 'Cannot delete theater';
+                    if (statusData.hasActiveShows) {
+                        errorMessage += ' - Theater has active shows';
+                    }
+                    if (statusData.hasActiveScreens) {
+                        errorMessage += ' - Theater has active screens';
+                    }
+                    
+                    window.notificationSystem.error(errorMessage, {
                         title: 'Cannot Delete Theater',
                         duration: 6000
                     });
@@ -1017,16 +1024,29 @@
                 
                 if (confirm(confirmMessage)) {
                     try {
+                        console.log('Sending DELETE request to:', `/api/theaters/${theaterId}`);
                         const response = await fetch(`/api/theaters/${theaterId}`, {
                             method: 'DELETE'
                         });
+                        
+                        console.log('Delete response status:', response.status, response.ok);
 
                         if (response.ok) {
-                            loadTheaters();
+                            // Remove theater from local array immediately
+                            theaters = theaters.filter(t => t.id !== theaterId);
+                            filteredTheaters = filteredTheaters.filter(t => t.id !== theaterId);
+                            displayTheaters(filteredTheaters); // Update display immediately
+                            updateStats(theaters); // Update stats
+                            
                             window.notificationSystem.success('Theater deleted successfully!', {
                                 title: 'Theater Deleted',
                                 duration: 4000
                             });
+                            
+                            // Also refresh from server to ensure consistency
+                            setTimeout(() => {
+                                loadTheaters();
+                            }, 1000);
                         } else {
                             // Try to get error message from response
                             let errorMessage = 'Failed to delete theater';

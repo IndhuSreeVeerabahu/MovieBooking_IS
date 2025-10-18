@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -31,6 +32,7 @@ public class BookingResponse {
     private String paymentMethod;
     private LocalDateTime bookingDate;
     private LocalDateTime expiryTime;
+    private List<String> seatNumbers;
 
     // Helper methods
     public boolean isConfirmed() {

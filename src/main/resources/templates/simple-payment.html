@@ -76,17 +76,6 @@
                 </button>
                 
                 <div id="errorMessage" class="hidden mt-4 p-4 bg-red-600 text-white rounded-lg"></div>
-                
-                <div class="mt-4 p-4 bg-green-600 bg-opacity-20 border border-green-500 rounded-lg">
-                    <p class="text-sm text-green-200">
-                       Payment will always succeed and tickets will be booked automatically.
-                    </p>
-                </div>
-                
-                <!-- Backup direct success button -->
-                <button onclick="directSuccess()" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                    🎯 Direct Success (Backup)
-                </button>
             </div>
         </div>
     </div>
@@ -116,19 +105,52 @@
             loadingSpinner.classList.remove('hidden');
             hideError();
 
-            console.log('=== DUMMY PAYMENT PROCESSING ===');
-            console.log('Payment Method:', selectedPaymentMethod);
-            console.log('Booking ID:', "[[${booking.id}]]");
+            try {
+                console.log('Starting payment...');
+                console.log('Payment Session ID:', "[[${paymentSessionId}]]");
+                console.log('Cashfree App ID:', "[[${cashfreeAppId}]]");
+                console.log('Environment:', "[[${environment}]]");
 
-            // Simulate payment processing delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
+                // Check if Cashfree SDK is loaded
+                if (typeof Cashfree === 'undefined') {
+                    throw new Error('Cashfree SDK not loaded');
+                }
 
-            console.log('✅ DUMMY PAYMENT SUCCESSFUL!');
-            console.log('Redirecting to success page...');
+                // Initialize Cashfree
+                const cashfree = Cashfree({
+                    mode: "[[${environment}]]"
+                });
 
-            // Always redirect to success page for dummy project - NO API CALLS
-            // Try the success callback first, then fallback to direct success
-            window.location.href = "http://localhost:8080/payment/success?order_id=ORDER_[[${booking.id}]]_dummy&cf_payment_id=dummy_payment_[[${booking.id}]]&payment_status=SUCCESS";
+                console.log('Cashfree initialized');
+
+                // Create checkout
+                const result = await cashfree.checkout({
+                    paymentSessionId: "[[${paymentSessionId}]]",
+                    returnUrl: "http://localhost:8080/payment/success"
+                });
+
+                console.log('Cashfree result:', result);
+
+                if (result.error) {
+                    throw new Error(result.error.message || 'Payment failed');
+                }
+
+                if (result.redirectUrl) {
+                    console.log('Redirecting to:', result.redirectUrl);
+                    window.location.href = result.redirectUrl;
+                } else {
+                    throw new Error('No redirect URL received');
+                }
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showError('Payment failed: ' + error.message);
+                
+                // Reset button
+                payButton.disabled = false;
+                payButtonText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+            }
         }
 
         function showError(message) {
@@ -139,42 +161,6 @@
 
         function hideError() {
             document.getElementById('errorMessage').classList.add('hidden');
-        }
-
-        // Direct success function for backup
-        async function directSuccess() {
-            if (!selectedPaymentMethod) {
-                selectedPaymentMethod = 'upi'; // Default to UPI
-            }
-            
-            console.log('=== DIRECT SUCCESS BACKUP ===');
-            console.log('Booking ID:', "[[${booking.id}]]");
-            console.log('Payment Method:', selectedPaymentMethod);
-            
-            try {
-                // Create form data
-                const formData = new FormData();
-                formData.append('paymentMethod', selectedPaymentMethod);
-                
-                // Make direct success call
-                const response = await fetch(`/payment/direct-success/[[${booking.id}]]`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    console.log('✅ Direct success successful!');
-                    window.location.href = response.url;
-                } else {
-                    console.error('Direct success failed:', response.status);
-                    // Fallback to success page anyway
-                    window.location.href = "http://localhost:8080/payment/success?order_id=ORDER_[[${booking.id}]]_dummy&cf_payment_id=dummy_payment_[[${booking.id}]]&payment_status=SUCCESS";
-                }
-            } catch (error) {
-                console.error('Direct success error:', error);
-                // Fallback to success page anyway
-                window.location.href = "http://localhost:8080/payment/success?order_id=ORDER_[[${booking.id}]]_dummy&cf_payment_id=dummy_payment_[[${booking.id}]]&payment_status=SUCCESS";
-            }
         }
 
         // Initialize

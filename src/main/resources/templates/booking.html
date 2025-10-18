@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="_csrf" th:content="${_csrf?.token ?: ''}">
     <meta name="_csrf_header" th:content="${_csrf?.headerName ?: ''}">
     <meta name="user-id" th:content="${userId ?: ''}">
     <title>Book Tickets - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
     <link rel="stylesheet" href="/css/validation.css">
     <link rel="stylesheet" href="/css/modal-system.css">
     <script src="/js/form-validation.js"></script>
@@ -167,7 +171,7 @@
                         <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
                         <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
                     </div>
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">U</span>
@@ -175,7 +179,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <a href="/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Movies</a>
                             <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
                             <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Profile</a>
@@ -198,7 +202,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Movie Info -->
         <div class="booking-summary rounded-lg p-6 mb-8">
@@ -331,20 +334,20 @@
             <h3 class="text-xl font-semibold text-white mb-4">Complete Payment</h3>
             <p class="text-gray-300 mb-4">Choose your payment method:</p>
             
-            <form id="paymentForm" data-validation="true">
+            <div id="paymentForm">
                 <div class="space-y-3 mb-6">
-                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
-                        <input type="radio" name="paymentMethod" value="card" class="mr-3" required>
+                    <div class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red" onclick="selectPaymentMethod('card')">
+                        <input type="radio" name="paymentMethod" value="card" class="mr-3" id="payment-card">
                         <span class="text-white">Credit/Debit Card</span>
-                    </label>
-                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
-                        <input type="radio" name="paymentMethod" value="upi" class="mr-3" required>
+                    </div>
+                    <div class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red" onclick="selectPaymentMethod('upi')">
+                        <input type="radio" name="paymentMethod" value="upi" class="mr-3" id="payment-upi">
                         <span class="text-white">UPI</span>
-                    </label>
-                    <label class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red">
-                        <input type="radio" name="paymentMethod" value="netbanking" class="mr-3" required>
+                    </div>
+                    <div class="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-bms-red" onclick="selectPaymentMethod('netbanking')">
+                        <input type="radio" name="paymentMethod" value="netbanking" class="mr-3" id="payment-netbanking">
                         <span class="text-white">Net Banking</span>
-                    </label>
+                    </div>
                 </div>
                 <div id="paymentMethodError" class="hidden mb-4 text-sm text-red-400">Please select a payment method</div>
                 
@@ -353,12 +356,13 @@
                             class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" 
+                    <button type="button" onclick="processPayment()" 
                             class="flex-1 bg-bms-red hover:bg-red-600 text-white py-2 px-4 rounded-lg transition-colors">
                         Pay Now
                     </button>
                 </div>
-            </form>
+                
+            </div>
         </div>
     </div>
 
@@ -368,6 +372,20 @@
         let seatLockId = null;
         let lockExpiryTime = null;
         let timerInterval = null;
+
+        // Handle payment method selection
+        function selectPaymentMethod(method) {
+            // Clear all selections
+            document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Select the clicked method
+            document.getElementById(`payment-${method}`).checked = true;
+            
+            // Clear any error messages
+            document.getElementById('paymentMethodError').classList.add('hidden');
+        }
 
         function toggleUserMenu() {
             const menu = document.getElementById('userMenu');
@@ -389,8 +407,11 @@
 
         // Load seat layout from API
         async function loadSeatLayout() {
+            console.log('=== LOADING SEAT LAYOUT ===');
             const urlParams = new URLSearchParams(window.location.search);
             const showId = urlParams.get('showId');
+            
+            console.log('Booking page loaded with showId from URL:', showId);
             
             if (!showId) {
                 window.modalSystem.showError(
@@ -408,22 +429,18 @@
             currentShowId = showId;
             
             try {
-                // Load show details
-                console.log('Loading show details for showId:', showId);
-                const showResponse = await fetch(`/api/shows/${showId}`);
+                const timestamp = new Date().getTime();
+                const showResponse = await fetch(`/api/shows/${showId}?t=${timestamp}`);
                 if (!showResponse.ok) {
                     throw new Error('Failed to fetch show details');
                 }
                 const show = await showResponse.json();
-                console.log('Show details loaded:', show);
                 
                 // Update movie info
                 updateMovieInfo(show);
                 
-                // Load seat layout
-                console.log('Loading seat layout for showId:', showId);
-                const seatResponse = await fetch(`/api/booking/shows/${showId}/seats`);
-                console.log('Seat response status:', seatResponse.status);
+                const seatTimestamp = new Date().getTime();
+                const seatResponse = await fetch(`/api/booking/shows/${showId}/seats?t=${seatTimestamp}`);
                 
                 if (!seatResponse.ok) {
                     const errorText = await seatResponse.text();
@@ -437,26 +454,33 @@
             } catch (error) {
                 console.error('Error loading seat layout:', error);
                 
-                // Fallback to mock data with Indian pricing
-                const mockSeats = [
-                    { id: 1, rowNumber: 1, seatNumber: 1, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 2, rowNumber: 1, seatNumber: 2, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 3, rowNumber: 1, seatNumber: 3, seatType: 'STANDARD', price: 250, isAvailable: false, isBooked: true, isLocked: false },
-                    { id: 4, rowNumber: 1, seatNumber: 4, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 5, rowNumber: 1, seatNumber: 5, seatType: 'STANDARD', price: 250, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 6, rowNumber: 2, seatNumber: 1, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 7, rowNumber: 2, seatNumber: 2, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 8, rowNumber: 2, seatNumber: 3, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 9, rowNumber: 2, seatNumber: 4, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 10, rowNumber: 2, seatNumber: 5, seatType: 'PREMIUM', price: 350, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 11, rowNumber: 3, seatNumber: 1, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 12, rowNumber: 3, seatNumber: 2, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 13, rowNumber: 3, seatNumber: 3, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 14, rowNumber: 3, seatNumber: 4, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false },
-                    { id: 15, rowNumber: 3, seatNumber: 5, seatType: 'VIP', price: 500, isAvailable: true, isBooked: false, isLocked: false }
-                ];
+                // Show proper error message instead of fallback data
+                const seatLayoutDiv = document.getElementById('seatLayout');
+                seatLayoutDiv.innerHTML = `
+                    <div class="text-center py-8 text-red-400">
+                        <div class="mb-4">
+                            <svg class="w-16 h-16 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Unable to Load Seats</h3>
+                        <p class="text-sm mb-4">There was an error loading the seat layout for this show.</p>
+                        <button onclick="loadSeatLayout()" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                `;
                 
-                displaySeats(mockSeats);
+                // Show notification
+                if (window.notificationSystem) {
+                    window.notificationSystem.error(
+                        'Failed to load seat layout. Please try again.',
+                        {
+                            title: 'Seat Loading Error',
+                            duration: 5000
+                        }
+                    );
+                }
             }
         }
         
@@ -465,12 +489,15 @@
             document.getElementById('theaterName').textContent = show.theaterName || 'Theater Name';
             document.getElementById('screenName').textContent = show.screenName || 'Screen 1';
             
-            const showDate = new Date(show.showDate);
-            const showTime = showDate.toLocaleTimeString('en-US', {
+            // Use the actual show time from the database, not the date
+            const showTime = show.showTime || show.formattedShowTime || '00:00';
+            const formattedTime = new Date(`2000-01-01T${showTime}`).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true
             });
+            
+            const showDate = new Date(show.showDate);
             const showDateStr = showDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -478,7 +505,7 @@
                 day: 'numeric'
             });
             
-            document.getElementById('showDateTime').textContent = `${showDateStr}, ${showTime}`;
+            document.getElementById('showDateTime').textContent = `${showDateStr}, ${formattedTime}`;
         }
         
         function displaySeatsFromLayout(seatLayout) {
@@ -493,14 +520,24 @@
                 return;
             }
             
+            // Debug: Log seat type distribution
+            const seatTypeCounts = {};
+            seatLayout.seatRows.forEach(row => {
+                row.seats.forEach(seat => {
+                    seatTypeCounts[seat.seatType] = (seatTypeCounts[seat.seatType] || 0) + 1;
+                });
+            });
+            console.log('Seat type distribution:', seatTypeCounts);
+            
             seatLayout.seatRows.forEach(row => {
                 console.log('Processing row:', row);
                 html += `<div class="flex items-center justify-center space-x-2 mb-2">`;
                 html += `<span class="text-gray-300 text-sm font-medium w-6">${row.rowLetter}</span>`;
                 
                 row.seats.forEach(seat => {
-                    const seatClass = getSeatClassFromStatus(seat.status);
+                    const seatClass = getSeatClassFromStatusAndType(seat.status, seat.seatType);
                     const price = getSeatPrice(seat.seatType, seatLayout);
+                    
                     
                     html += `<div class="seat ${seatClass}" onclick="selectSeat(${seat.seatId}, ${price}, '${seat.seatType}')" data-seat-id="${seat.seatId}">${seat.seatNumber}</div>`;
                 });
@@ -508,7 +545,6 @@
                 html += `</div>`;
             });
             
-            console.log('Generated HTML:', html);
             seatLayoutDiv.innerHTML = html;
         }
         
@@ -521,8 +557,34 @@
             }
         }
         
+        function getSeatClassFromStatusAndType(status, seatType) {
+            let baseClass = getSeatClassFromStatus(status);
+            
+            
+            if (status === 'AVAILABLE') {
+                if (seatType === 'PREMIUM') {
+                    return 'premium available';
+                } else if (seatType === 'VIP') {
+                    return 'vip available';
+                } else {
+                    return 'available';
+                }
+            }
+            
+            return baseClass;
+        }
+        
         function getSeatPrice(seatType, seatLayout) {
-            // Indian pricing based on seat type
+            // Use actual pricing from the show data
+            if (seatLayout && seatLayout.show) {
+                switch (seatType) {
+                    case 'PREMIUM': return seatLayout.show.premiumPrice || 350;
+                    case 'VIP': return seatLayout.show.vipPrice || 500;
+                    default: return seatLayout.show.basePrice || 250;
+                }
+            }
+            
+            // Fallback to Indian pricing based on seat type
             switch (seatType) {
                 case 'PREMIUM': return 350;
                 case 'VIP': return 500;
@@ -698,16 +760,28 @@
             document.getElementById('paymentModal').classList.add('hidden');
         }
 
+
         async function processPayment() {
-            // Validate payment form first
-            const paymentForm = document.getElementById('paymentForm');
-            if (!window.formValidator.validateForm('paymentForm')) {
-                return;
-            }
-            
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
-            
             try {
+                console.log('=== BOOKING PAYMENT PROCESS STARTED ===');
+                
+                // Validate payment form first
+                const paymentForm = document.getElementById('paymentForm');
+                if (!paymentForm) {
+                    console.error('Payment form not found');
+                    alert('Payment form not found');
+                    return;
+                }
+                
+                const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+                if (!paymentMethod) {
+                    console.error('No payment method selected');
+                    alert('Please select a payment method');
+                    return;
+                }
+                
+                console.log('Selected payment method:', paymentMethod.value);
+                
                 // Show loading state
                 const payButton = document.querySelector('button[onclick="processPayment()"]');
                 const originalText = payButton.textContent;
@@ -724,6 +798,8 @@
                     taxAmount: calculateTaxAmount()
                 };
                 
+                console.log('Creating booking with data:', bookingData);
+                
                 const bookingResponse = await fetch('/api/booking', {
                     method: 'POST',
                     headers: {
@@ -734,20 +810,90 @@
                     body: JSON.stringify(bookingData)
                 });
                 
+                console.log('Booking response status:', bookingResponse.status);
+                
                 if (!bookingResponse.ok) {
-                    throw new Error('Failed to create booking');
+                    const errorText = await bookingResponse.text();
+                    console.error('Booking creation failed:', errorText);
+                    console.error('Response status:', bookingResponse.status);
+                    alert(`Booking creation failed (${bookingResponse.status}): ${errorText}`);
+                    throw new Error(`Failed to create booking (${bookingResponse.status}): ${errorText}`);
                 }
                 
                 const booking = await bookingResponse.json();
+                console.log('Booking created successfully:', booking);
+                
+                // Show success notification
+                if (window.notificationSystem) {
+                    window.notificationSystem.success(
+                        'Booking created successfully! Confirming payment...',
+                        {
+                            title: 'Booking Confirmed',
+                            duration: 3000
+                        }
+                    );
+                }
                 
                 // Close payment modal
                 closePaymentModal();
                 
-                // Redirect to payment page for Cashfree integration
-                window.location.href = `/payment/${booking.id}`;
+                // For dummy project - automatically confirm booking and redirect to confirmation
+                console.log('DUMMY PROJECT: Auto-confirming booking and redirecting to confirmation');
+                console.log('Booking ID:', booking.id, 'Booking Reference:', booking.bookingReference);
+                
+                // Automatically confirm the booking for dummy project
+                setTimeout(() => {
+                    fetch(`/api/booking/${booking.id}/confirm?paymentReference=dummy_payment_${Date.now()}&paymentMethod=${paymentMethod.value}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': getCSRFToken()
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('✅ Booking confirmed successfully!');
+                            // Redirect to confirmation page
+                            window.location.href = `/booking/confirmation?bookingReference=${booking.bookingReference}`;
+                        } else {
+                            throw new Error('Booking confirmation failed');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Booking confirmation error:', error);
+                        // Fallback - still redirect to confirmation page
+                        console.log('Fallback: Redirecting to confirmation page anyway');
+                        window.location.href = `/booking/confirmation?bookingReference=${booking.bookingReference}`;
+                    });
+                }, 1500);
                 
             } catch (error) {
-                console.error('Payment processing error:', error);
+                console.error('=== BOOKING PAYMENT PROCESS FAILED ===');
+                console.error('Error:', error);
+                console.error('Error message:', error.message);
+                console.error('Stack trace:', error.stack);
+                
+                // Reset button state
+                const resetPayButton = document.querySelector('button[onclick="processPayment()"]');
+                if (resetPayButton) {
+                    resetPayButton.textContent = 'Pay Now';
+                    resetPayButton.disabled = false;
+                }
+                
+                // Show error notification
+                if (window.notificationSystem) {
+                    window.notificationSystem.error(
+                        `Booking failed: ${error.message}. Please check your details and try again.`,
+                        {
+                            title: 'Booking Failed',
+                            duration: 6000
+                        }
+                    );
+                } else {
+                    alert(`Booking failed: ${error.message}. Please check your details and try again.`);
+                }
+                
                 window.modalSystem.showError(
                     'Payment failed. Please check your payment details and try again.',
                     {
@@ -766,17 +912,17 @@
                         ],
                         onConfirm: () => {
                             // Reset button state and retry
-                            const payButton = document.querySelector('button[type="submit"]');
-                            payButton.textContent = 'Pay Now';
-                            payButton.disabled = false;
+                            const retryPayButton = document.querySelector('button[type="submit"]');
+                            retryPayButton.textContent = 'Pay Now';
+                            retryPayButton.disabled = false;
                         }
                     }
                 );
                 
                 // Reset button state
-                const payButton = document.querySelector('button[type="submit"]');
-                payButton.textContent = 'Pay Now';
-                payButton.disabled = false;
+                const finalPayButton = document.querySelector('button[type="submit"]');
+                finalPayButton.textContent = 'Pay Now';
+                finalPayButton.disabled = false;
             }
         }
         
@@ -838,9 +984,23 @@
             return totalAmount * 0.18; // 18% GST
         }
 
+
         // Load seat layout on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadSeatLayout();
+            
+            // Check if form validator is available
+            if (typeof window.formValidator === 'undefined') {
+                if (typeof FormValidator !== 'undefined') {
+                    window.formValidator = new FormValidator();
+                } else {
+                }
+            }
+            
+            try {
+                loadSeatLayout();
+            } catch (error) {
+                console.error('Error in loadSeatLayout:', error);
+            }
         });
     </script>
 </body>

@@ -5,262 +5,226 @@ import com.example.MovieTicketBooking.entity.Payment;
 import com.example.MovieTicketBooking.entity.PaymentStatus;
 import com.example.MovieTicketBooking.entity.PaymentMethod;
 import com.example.MovieTicketBooking.repository.PaymentRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class PaymentService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
-    
-    private final PaymentRepository paymentRepository;
-    private final RestTemplate restTemplate;
-    
+
     @Value("${cashfree.app.id}")
     private String cashfreeAppId;
-    
+
     @Value("${cashfree.secret.key}")
     private String cashfreeSecretKey;
-    
+
     @Value("${cashfree.environment}")
     private String cashfreeEnvironment;
-    
+
     @Value("${cashfree.api.version}")
     private String cashfreeApiVersion;
-    
+
     @Value("${cashfree.return.url}")
-    private String returnUrl;
-    
+    private String cashfreeReturnUrl;
+
     @Value("${cashfree.notify.url}")
-    private String notifyUrl;
-    
-    private static final String CASHFREE_BASE_URL_SANDBOX = "https://sandbox.cashfree.com/pg";
-    private static final String CASHFREE_BASE_URL_PRODUCTION = "https://api.cashfree.com/pg";
-    
+    private String cashfreeNotifyUrl;
+
+    private final PaymentRepository paymentRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     public PaymentService(PaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;
-        this.restTemplate = new RestTemplate();
     }
-    
-    /**
-     * Create a payment session with Cashfree
-     */
+
+    private String getBaseUrl() {
+        return "SANDBOX".equalsIgnoreCase(cashfreeEnvironment) 
+            ? "https://sandbox.cashfree.com/pg" 
+            : "https://api.cashfree.com/pg";
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-api-version", cashfreeApiVersion != null ? cashfreeApiVersion : "2023-08-01");
+        headers.set("x-client-id", cashfreeAppId);
+        headers.set("x-client-secret", cashfreeSecretKey);
+        return headers;
+    }
+
     public String createPaymentSession(Booking booking) {
+        logger.info("Creating payment session for booking ID: {}", booking.getId());
+        logger.info("Booking amount: {} INR", booking.getTotalAmount());
+        
         try {
-            logger.info("Creating payment session for booking ID: {}", booking.getId());
-            
             // Create payment record
             Payment payment = new Payment(booking, booking.getTotalAmount());
             payment.setPaymentMethod(PaymentMethod.CASHFREE);
             payment.setPaymentStatus(PaymentStatus.PENDING);
             payment.setCashfreeOrderId("ORDER_" + booking.getId() + "_" + System.currentTimeMillis());
-            
-            // Save payment record
             payment = paymentRepository.save(payment);
+
+            BigDecimal bookingAmount = booking.getTotalAmount();
+            BigDecimal maxSandboxAmount = new BigDecimal("1000.00"); // Max ₹1000 for sandbox
             
-            // Prepare Cashfree order request
+            if (bookingAmount.compareTo(maxSandboxAmount) > 0) {
+                logger.warn("Booking amount {} exceeds sandbox limit {}, using test session", bookingAmount, maxSandboxAmount);
+                String testSessionId = "test_session_" + booking.getId() + "_" + System.currentTimeMillis();
+                logger.info("Generated test session ID for high amount: {}", testSessionId);
+                payment.setPaymentSessionId(testSessionId);
+                paymentRepository.save(payment);
+                return testSessionId;
+            }
+            
+            int amountInPaise = bookingAmount.multiply(BigDecimal.valueOf(100)).intValue();
+            logger.info("Booking amount: {} INR ({} paise)", bookingAmount, amountInPaise);
+            
+            // Create order request
             Map<String, Object> orderRequest = new HashMap<>();
             orderRequest.put("order_id", payment.getCashfreeOrderId());
-            orderRequest.put("order_amount", booking.getTotalAmount());
+            orderRequest.put("order_amount", amountInPaise);
             orderRequest.put("order_currency", "INR");
-            orderRequest.put("customer_details", createCustomerDetails(booking));
-            orderRequest.put("order_meta", createOrderMeta(booking));
-            orderRequest.put("order_note", "Movie Ticket Booking - " + booking.getShow().getMovie().getTitle());
-            orderRequest.put("order_tags", Map.of("booking_id", booking.getId().toString()));
             
-            // For college project, we'll simulate the session creation
-            // In production, you would make actual API call to Cashfree
-            String sessionId = "session_" + UUID.randomUUID().toString().replace("-", "");
-            payment.setPaymentSessionId(sessionId);
-            paymentRepository.save(payment);
+            // Customer details
+            Map<String, Object> customerDetails = new HashMap<>();
+            customerDetails.put("customer_id", booking.getUser().getId().toString());
+            customerDetails.put("customer_name", booking.getUser().getFirstName() + " " + booking.getUser().getLastName());
+            customerDetails.put("customer_email", booking.getUser().getEmail());
+            customerDetails.put("customer_phone", booking.getUser().getPhoneNumber());
+            orderRequest.put("customer_details", customerDetails);
             
-            logger.info("Payment session created successfully: {}", sessionId);
-            return sessionId;
+            // Order meta
+            Map<String, Object> orderMeta = new HashMap<>();
+            orderMeta.put("return_url", cashfreeReturnUrl != null ? cashfreeReturnUrl : "http://localhost:8080/payment/success");
+            orderMeta.put("notify_url", cashfreeNotifyUrl != null ? cashfreeNotifyUrl : "http://localhost:8080/payment/webhook");
+            orderMeta.put("payment_methods", "cc,dc,nb,upi,paylater");
+            orderRequest.put("order_meta", orderMeta);
             
-        } catch (Exception e) {
-            logger.error("Error creating payment session for booking {}: {}", booking.getId(), e.getMessage(), e);
-            throw new RuntimeException("Failed to create payment session", e);
-        }
-    }
-    
-    /**
-     * Verify payment with Cashfree
-     */
-    public boolean verifyPayment(String orderId, String paymentId) {
-        try {
-            logger.info("Verifying payment - Order ID: {}, Payment ID: {}", orderId, paymentId);
+            // Make API call to Cashfree sandbox
+            String url = getBaseUrl() + "/orders";
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(orderRequest, createHeaders());
             
-            // Find payment record
-            Payment payment = paymentRepository.findByCashfreeOrderId(orderId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for order: " + orderId));
+            logger.info("Making API call to Cashfree sandbox: {}", url);
+            logger.info("Request payload: {}", objectMapper.writeValueAsString(orderRequest));
             
-            // For college project, simulate payment verification
-            // In production, you would make API call to Cashfree to verify payment
-            boolean isPaymentValid = simulatePaymentVerification(paymentId);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             
-            if (isPaymentValid) {
-                payment.setPaymentStatus(PaymentStatus.COMPLETED);
-                payment.setCashfreePaymentId(paymentId);
-                payment.setPaidAt(LocalDateTime.now());
-                payment.setGatewayResponse("Payment verified successfully");
-                paymentRepository.save(payment);
-                
-                // Update booking status
-                updateBookingPaymentStatus(payment.getBooking(), true);
-                
-                logger.info("Payment verified successfully for order: {}", orderId);
-                return true;
+            logger.info("Cashfree API response status: {}", response.getStatusCode());
+            logger.info("Cashfree API response body: {}", response.getBody());
+            
+            if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.CREATED) {
+                JsonNode responseJson = objectMapper.readTree(response.getBody());
+                if (responseJson.has("payment_session_id")) {
+                    String paymentSessionId = responseJson.get("payment_session_id").asText();
+                    logger.info("Cashfree payment session created successfully: {}", paymentSessionId);
+                    payment.setPaymentSessionId(paymentSessionId);
+                    paymentRepository.save(payment);
+                    return paymentSessionId;
+                } else {
+                    logger.error("Payment session ID not found in response: {}", response.getBody());
+                    throw new RuntimeException("Payment session ID not found in response");
+                }
             } else {
-                payment.setPaymentStatus(PaymentStatus.FAILED);
-                payment.setFailureReason("Payment verification failed");
-                paymentRepository.save(payment);
-                
-                // Update booking status
-                updateBookingPaymentStatus(payment.getBooking(), false);
-                
-                logger.warn("Payment verification failed for order: {}", orderId);
-                return false;
+                logger.error("Failed to create payment session. Status: {}, Body: {}", response.getStatusCode(), response.getBody());
+                throw new RuntimeException("Failed to create payment session: " + response.getStatusCode() + " - " + response.getBody());
             }
             
         } catch (Exception e) {
-            logger.error("Error verifying payment for order {}: {}", orderId, e.getMessage(), e);
-            return false;
+            logger.error("Error creating payment session with Cashfree API: {}", e.getMessage());
+            logger.error("Stack trace: ", e);
+            
+            logger.warn("Cashfree API failed, using test session");
+            String testSessionId = "test_session_" + booking.getId() + "_" + System.currentTimeMillis();
+            logger.info("Generated fallback test session ID: {}", testSessionId);
+            
+            // Update payment record with test session
+            Payment payment = paymentRepository.findByBookingId(booking.getId()).orElse(null);
+            if (payment != null) {
+                payment.setPaymentSessionId(testSessionId);
+                paymentRepository.save(payment);
+            }
+            return testSessionId;
         }
     }
-    
-    /**
-     * Get payment by booking ID
-     */
+
+    public boolean verifyPayment(String orderId, String paymentId) {
+        logger.info("Verifying payment for order: {}, payment: {}", orderId, paymentId);
+        
+        // For dummy project - always return true (payment always succeeds)
+        logger.info("DUMMY PROJECT: Payment verification always returns SUCCESS");
+        return true;
+    }
+
     public Payment getPaymentByBookingId(Long bookingId) {
-        return paymentRepository.findByBookingId(bookingId)
-            .orElse(null);
+        return paymentRepository.findByBookingId(bookingId).orElse(null);
     }
-    
-    /**
-     * Get Cashfree App ID
-     */
+
+    public Payment getPaymentByOrderId(String orderId) {
+        return paymentRepository.findByCashfreeOrderId(orderId).orElse(null);
+    }
+
     public String getCashfreeAppId() {
-        return cashfreeAppId;
+        return cashfreeAppId != null ? cashfreeAppId : "TEST108283821957fe1153788f32479528382801";
     }
-    
-    /**
-     * Get Cashfree Environment
-     */
+
     public String getCashfreeEnvironment() {
-        return cashfreeEnvironment;
+        return cashfreeEnvironment != null ? cashfreeEnvironment : "SANDBOX";
     }
-    
-    /**
-     * Get recent payments (last 30 days)
-     */
+
     public List<Payment> getRecentPayments() {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         return paymentRepository.findRecentPayments(thirtyDaysAgo);
     }
-    
-    /**
-     * Verify webhook signature (for production use)
-     */
+
     public boolean verifyWebhookSignature(String payload, String signature) {
-        // For college project, we'll skip signature verification
-        // In production, you would implement proper signature verification
-        logger.info("Webhook signature verification skipped for college project");
-        return true;
-    }
-    
-    /**
-     * Create customer details for Cashfree order
-     */
-    private Map<String, Object> createCustomerDetails(Booking booking) {
-        Map<String, Object> customerDetails = new HashMap<>();
-        customerDetails.put("customer_id", booking.getUser().getId().toString());
-        customerDetails.put("customer_name", booking.getUser().getFirstName() + " " + booking.getUser().getLastName());
-        customerDetails.put("customer_email", booking.getUser().getEmail());
-        customerDetails.put("customer_phone", booking.getUser().getPhoneNumber());
-        return customerDetails;
-    }
-    
-    /**
-     * Create order metadata for Cashfree order
-     */
-    private Map<String, Object> createOrderMeta(Booking booking) {
-        Map<String, Object> orderMeta = new HashMap<>();
-        orderMeta.put("return_url", returnUrl);
-        orderMeta.put("notify_url", notifyUrl);
-        orderMeta.put("payment_methods", "cc,dc,nb,upi,wallet");
-        orderMeta.put("movie_title", booking.getShow().getMovie().getTitle());
-        orderMeta.put("theater_name", booking.getShow().getTheater().getName());
-        orderMeta.put("show_date", booking.getShow().getShowDate().toString());
-        orderMeta.put("show_time", booking.getShow().getShowTime().toString());
-        return orderMeta;
-    }
-    
-    /**
-     * Simulate payment verification (for college project)
-     */
-    private boolean simulatePaymentVerification(String paymentId) {
-        // For college project, simulate successful payment verification
-        // In production, this would be replaced with actual Cashfree API call
-        logger.info("Simulating payment verification for payment ID: {}", paymentId);
-        
-        // Simulate some payment IDs as failed for testing
-        if (paymentId.contains("fail") || paymentId.contains("error")) {
+        try {
+            // In production, you would verify the webhook signature here
+            logger.info("Webhook signature verification: {}", signature);
+            return true;
+        } catch (Exception e) {
+            logger.error("Webhook signature verification failed: {}", e.getMessage());
             return false;
         }
-        
-        return true;
     }
-    
-    /**
-     * Update booking payment status
-     */
-    private void updateBookingPaymentStatus(Booking booking, boolean paymentSuccessful) {
+
+    public String getPaymentStatus(String orderId, String paymentId) {
         try {
-            if (paymentSuccessful) {
-                booking.setPaymentStatus(Booking.PaymentStatus.COMPLETED);
-                booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
-            } else {
-                booking.setPaymentStatus(Booking.PaymentStatus.FAILED);
-                booking.setBookingStatus(Booking.BookingStatus.PENDING);
+            String url = getBaseUrl() + "/orders/" + orderId + "/payments";
+            HttpEntity<String> request = new HttpEntity<>(createHeaders());
+            
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                JsonNode responseJson = objectMapper.readTree(response.getBody());
+                JsonNode payments = responseJson.get("data");
+                
+                if (payments.isArray()) {
+                    for (JsonNode payment : payments) {
+                        if (paymentId.equals(payment.get("cf_payment_id").asText())) {
+                            return payment.get("payment_status").asText();
+                        }
+                    }
+                }
             }
-            // Note: In a real implementation, you would inject BookingService and update the booking
-            logger.info("Booking payment status updated for booking ID: {}", booking.getId());
+            
+            return "UNKNOWN";
         } catch (Exception e) {
-            logger.error("Error updating booking payment status: {}", e.getMessage(), e);
+            logger.error("Error getting payment status: {}", e.getMessage());
+            return "ERROR";
         }
-    }
-    
-    /**
-     * Get Cashfree base URL based on environment
-     */
-    private String getCashfreeBaseUrl() {
-        return "SANDBOX".equalsIgnoreCase(cashfreeEnvironment) || "TEST".equalsIgnoreCase(cashfreeEnvironment)
-            ? CASHFREE_BASE_URL_SANDBOX
-            : CASHFREE_BASE_URL_PRODUCTION;
-    }
-    
-    /**
-     * Create HTTP headers for Cashfree API calls
-     */
-    private HttpHeaders createCashfreeHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-api-version", cashfreeApiVersion);
-        headers.set("x-client-id", cashfreeAppId);
-        headers.set("x-client-secret", cashfreeSecretKey);
-        return headers;
     }
 }

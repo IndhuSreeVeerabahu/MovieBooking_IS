@@ -1,10 +1,8 @@
 package com.example.MovieTicketBooking.controller;
 
+import com.example.MovieTicketBooking.dto.BookingResponse;
 import com.example.MovieTicketBooking.entity.User;
-import com.example.MovieTicketBooking.service.UserService;
-import com.example.MovieTicketBooking.service.MovieService;
-import com.example.MovieTicketBooking.service.TheaterService;
-import com.example.MovieTicketBooking.service.ShowService;
+import com.example.MovieTicketBooking.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -27,6 +25,7 @@ public class WebController {
     private final MovieService movieService;
     private final TheaterService theaterService;
     private final ShowService showService;
+    private final BookingService bookingService;
     
     /**
      * Show login page
@@ -73,7 +72,7 @@ public class WebController {
                     firstName, lastName, email, phoneNumber);
             
             // Create RegisterRequest object
-            com.example.MovieTicketBooking.dto.RegisterRequest request = 
+            com.example.MovieTicketBooking.dto.RegisterRequest request =
                 com.example.MovieTicketBooking.dto.RegisterRequest.builder()
                     .firstName(firstName)
                     .lastName(lastName)
@@ -306,8 +305,8 @@ public class WebController {
             
             // Add CSRF token if available
             try {
-                org.springframework.security.web.csrf.CsrfToken csrfToken = 
-                    (org.springframework.security.web.csrf.CsrfToken) 
+                org.springframework.security.web.csrf.CsrfToken csrfToken =
+                    (org.springframework.security.web.csrf.CsrfToken)
                     org.springframework.web.context.request.RequestContextHolder
                         .currentRequestAttributes()
                         .getAttribute("_csrf", org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST);
@@ -333,6 +332,20 @@ public class WebController {
         try {
             User currentUser = (User) authentication.getPrincipal();
             model.addAttribute("user", currentUser);
+            
+            // Fetch user's bookings
+            List<BookingResponse> userBookings = bookingService.getUserBookings(currentUser.getId());
+            model.addAttribute("bookings", userBookings);
+            
+            log.info("Loaded {} bookings for user: {}", userBookings.size(), currentUser.getId());
+            
+            // Debug: Log booking statuses
+            for (BookingResponse booking : userBookings) {
+                log.info("Booking {}: Status={}, PaymentStatus={}", 
+                    booking.getBookingReference(), 
+                    booking.getBookingStatus(), 
+                    booking.getPaymentStatus());
+            }
             return "bookings";
         } catch (Exception e) {
             log.error("Failed to load bookings page", e);
@@ -349,8 +362,19 @@ public class WebController {
                                         Model model) {
         try {
             User currentUser = (User) authentication.getPrincipal();
+            
+            // Load the actual booking data
+            BookingResponse booking = bookingService.getBookingByReference(bookingReference);
+            
+            // Verify the booking belongs to the current user
+            if (!booking.getUserId().equals(currentUser.getId())) {
+                log.error("Unauthorized access to booking {} by user {}", bookingReference, currentUser.getId());
+                return "redirect:/bookings";
+            }
+            
             model.addAttribute("user", currentUser);
             model.addAttribute("bookingReference", bookingReference);
+            model.addAttribute("booking", booking);
             return "booking-confirmation";
         } catch (Exception e) {
             log.error("Failed to load booking confirmation page", e);
@@ -389,6 +413,12 @@ public class WebController {
         try {
             User currentUser = (User) authentication.getPrincipal();
             model.addAttribute("user", currentUser);
+            
+            // Set Chennai as default city (since all theaters are in Chennai)
+            var theaters = theaterService.getAllActiveTheaters();
+            var defaultCity = "Chennai";
+            model.addAttribute("defaultCity", defaultCity);
+            
             return "theaters";
         } catch (Exception e) {
             log.error("Failed to load theaters page", e);
@@ -402,7 +432,7 @@ public class WebController {
     @GetMapping("/movie/{movieId}")
     public String movieDetailsPage(@PathVariable Long movieId, Authentication authentication, Model model) {
         try {
-            log.info("Loading movie details page for movie ID: {}", movieId);
+            log.info("Loading movie details page for movie ID: {} - Fetching fresh data from database", movieId);
             
             // Add user to model
             User currentUser = (User) authentication.getPrincipal();
@@ -412,23 +442,71 @@ public class WebController {
             var movie = movieService.getMovieById(movieId);
             model.addAttribute("movie", movie);
             
-            // Get theaters with shows for this movie
+            // Get theaters with shows for this movie - Force fresh data from database
             var theaters = theaterService.getAllActiveTheaters();
+            log.info("Total active theaters found: {}", theaters.size());
+            
             var theatersWithShows = theaters.stream()
                     .map(theater -> {
                         try {
+                            // Force fresh fetch from database by calling the service method
                             var shows = showService.getShowsByMovieAndTheater(movieId, theater.getId());
-                            theater.setShows(shows);
-                            return theater;
+                            log.info("Fresh data - Found {} shows for movie {} at theater {}: {}", 
+                                    shows.size(), movieId, theater.getId(), 
+                                    shows.stream().map(s -> s.getId() + ":" + s.getShowTime() + ":" + s.getMovieTitle()).toList());
+                            
+                            // Create a new TheaterResponse with shows
+                            var theaterWithShows = com.example.MovieTicketBooking.dto.TheaterResponse.builder()
+                                    .id(theater.getId())
+                                    .name(theater.getName())
+                                    .address(theater.getAddress())
+                                    .city(theater.getCity())
+                                    .state(theater.getState())
+                                    .pincode(theater.getPincode())
+                                    .phoneNumber(theater.getPhoneNumber())
+                                    .email(theater.getEmail())
+                                    .totalScreens(theater.getTotalScreens())
+                                    .amenities(theater.getAmenities())
+                                    .isActive(theater.getIsActive())
+                                    .fullAddress(theater.getFullAddress())
+                                    .screens(theater.getScreens())
+                                    .shows(shows)
+                                    .createdAt(theater.getCreatedAt())
+                                    .updatedAt(theater.getUpdatedAt())
+                                    .build();
+                            return theaterWithShows;
                         } catch (Exception e) {
-                            log.warn("Failed to get shows for theater {} and movie {}", theater.getId(), movieId);
-                            return theater;
+                            log.warn("Failed to get shows for theater {} and movie {}: {}", theater.getId(), movieId, e.getMessage());
+                            // Return theater with empty shows instead of null
+                            return com.example.MovieTicketBooking.dto.TheaterResponse.builder()
+                                    .id(theater.getId())
+                                    .name(theater.getName())
+                                    .address(theater.getAddress())
+                                    .city(theater.getCity())
+                                    .state(theater.getState())
+                                    .pincode(theater.getPincode())
+                                    .phoneNumber(theater.getPhoneNumber())
+                                    .email(theater.getEmail())
+                                    .totalScreens(theater.getTotalScreens())
+                                    .amenities(theater.getAmenities())
+                                    .isActive(theater.getIsActive())
+                                    .fullAddress(theater.getFullAddress())
+                                    .screens(theater.getScreens())
+                                    .shows(java.util.Collections.emptyList())
+                                    .createdAt(theater.getCreatedAt())
+                                    .updatedAt(theater.getUpdatedAt())
+                                    .build();
                         }
                     })
                     .filter(theater -> theater.getShows() != null && !theater.getShows().isEmpty())
                     .collect(java.util.stream.Collectors.toList());
             
+            log.info("Total theaters with shows loaded: {}", theatersWithShows.size());
             model.addAttribute("theatersWithShows", theatersWithShows);
+            
+            // Set Chennai as default city (since all theaters are in Chennai)
+            var defaultCity = "Chennai";
+            model.addAttribute("defaultCity", defaultCity);
             
             // Get similar movies (same genre)
             var similarMovies = movieService.getMoviesByGenre(movie.getGenre())

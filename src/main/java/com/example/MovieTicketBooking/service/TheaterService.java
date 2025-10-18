@@ -64,6 +64,20 @@ public class TheaterService {
     }
 
     /**
+     * Get all cities from theaters
+     */
+    @Transactional(readOnly = true)
+    public List<String> getAllCities() {
+        log.info("Fetching all cities from theaters");
+        List<Theater> theaters = theaterRepository.findByIsActiveTrue();
+        return theaters.stream()
+                .map(Theater::getCity)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get theaters by city
      */
     @Transactional(readOnly = true)
@@ -245,6 +259,15 @@ public class TheaterService {
                 .createdAt(theater.getCreatedAt())
                 .updatedAt(theater.getUpdatedAt())
                 .build();
+    }
+    
+    /**
+     * Map Theater entity to TheaterResponse DTO with shows
+     */
+    public TheaterResponse mapToTheaterResponseWithShows(Theater theater, List<com.example.MovieTicketBooking.dto.ShowResponse> shows) {
+        TheaterResponse response = mapToTheaterResponse(theater);
+        // Add shows to the response - this will be handled by the WebController
+        return response;
     }
     
     /**

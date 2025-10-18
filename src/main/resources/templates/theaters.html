@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Theaters - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
+    <script src="/js/notification-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.notificationSystem) {
+                setTimeout(() => {
+                    window.notificationSystem.info('Theaters page loaded! 🎭', {
+                        title: 'Theaters Ready',
+                        duration: 3000
+                    });
+                }, 1000);
+            } else {
+                console.error('Theaters - Notification system not available!');
+            }
+        });
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -82,7 +98,7 @@
                         <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
                         <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
                     </div>
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-white font-semibold text-sm" th:text="${user.firstName != null ? user.firstName.substring(0,1) : 'U'}">U</span>
@@ -90,7 +106,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Profile</a>
                             <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Settings</a>
@@ -140,7 +156,6 @@
         </div>
     </section>
 
-    <!-- Main Content -->
     <main class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style="z-index: 1 !important;">
         <!-- Filter Section -->
         <div class="mb-8">
@@ -207,70 +222,22 @@
             } catch (error) {
                 console.error('Error loading theaters:', error);
                 
-                // Fallback to mock data with Tamil Nadu locations
-                const mockTheaters = [
-                    {
-                        id: 1,
-                        name: 'PVR Cinemas Phoenix MarketCity',
-                        address: '142, Velachery Main Road, Velachery',
-                        city: 'Chennai',
-                        state: 'Tamil Nadu',
-                        pincode: '600042',
-                        phoneNumber: '+91-44-12345678',
-                        email: 'chennai@pvr.com',
-                        totalScreens: 8,
-                        amenities: 'IMAX, Dolby Atmos, Recliner Seats, Food Court',
-                        isActive: true,
-                        fullAddress: '142, Velachery Main Road, Velachery, Chennai, Tamil Nadu - 600042'
-                    },
-                    {
-                        id: 2,
-                        name: 'INOX Megaplex Express Avenue',
-                        address: 'Express Avenue Mall, White\'s Road, Royapettah',
-                        city: 'Chennai',
-                        state: 'Tamil Nadu',
-                        pincode: '600014',
-                        phoneNumber: '+91-44-87654321',
-                        email: 'chennai@inox.com',
-                        totalScreens: 12,
-                        amenities: '4DX, IMAX, Premium Lounges, Parking',
-                        isActive: true,
-                        fullAddress: 'Express Avenue Mall, White\'s Road, Royapettah, Chennai, Tamil Nadu - 600014'
-                    },
-                    {
-                        id: 3,
-                        name: 'Cinepolis Forum Mall',
-                        address: 'Forum Vijaya Mall, 183, Arcot Road, Vadapalani',
-                        city: 'Chennai',
-                        state: 'Tamil Nadu',
-                        pincode: '600026',
-                        phoneNumber: '+91-44-98765432',
-                        email: 'chennai@cinepolis.com',
-                        totalScreens: 6,
-                        amenities: 'Standard Screens, Concessions, Gaming Zone',
-                        isActive: true,
-                        fullAddress: 'Forum Vijaya Mall, 183, Arcot Road, Vadapalani, Chennai, Tamil Nadu - 600026'
-                    },
-                    {
-                        id: 4,
-                        name: 'Sathyam Cinemas',
-                        address: '8, Thiruvika Road, Royapettah',
-                        city: 'Chennai',
-                        state: 'Tamil Nadu',
-                        pincode: '600014',
-                        phoneNumber: '+91-44-23456789',
-                        email: 'chennai@sathyam.com',
-                        totalScreens: 4,
-                        amenities: 'Luxury Seating, Bar Service, Valet Parking',
-                        isActive: true,
-                        fullAddress: '8, Thiruvika Road, Royapettah, Chennai, Tamil Nadu - 600014'
-                    }
-                ];
-                
-                theaters = mockTheaters;
-                filteredTheaters = theaters;
-                displayTheaters();
-                populateFilters();
+                // Show error message instead of fallback data
+                const theatersContainer = document.getElementById('theatersContainer');
+                theatersContainer.innerHTML = `
+                    <div class="text-center py-12 text-red-400">
+                        <div class="mb-4">
+                            <svg class="w-16 h-16 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Unable to Load Theaters</h3>
+                        <p class="text-sm mb-4">There was an error loading theaters from the database.</p>
+                        <button onclick="loadTheaters()" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -312,7 +279,7 @@
                         </div>
                     </div>
                     
-                    ${theater.amenities ? `
+                    ${theater.amenities && theater.amenities !== 'null' && theater.amenities.trim() !== '' ? `
                         <div class="mb-4">
                             <h4 class="text-sm font-medium text-gray-300 mb-2">Amenities</h4>
                             <p class="text-xs text-gray-400">${theater.amenities}</p>
@@ -347,6 +314,13 @@
                 option.textContent = city;
                 cityFilter.appendChild(option);
             });
+            
+            // Set Chennai as default city if available
+            const defaultCity = /*[[${defaultCity}]]*/ 'Chennai';
+            if (defaultCity && cities.includes(defaultCity)) {
+                cityFilter.value = defaultCity;
+                filterTheaters(); // Apply filter immediately
+            }
             
             stateFilter.innerHTML = '<option value="">All States</option>';
             states.forEach(state => {

@@ -26,6 +26,7 @@ public class SeatLayoutResponse {
     private List<String> availableSeats;
     private List<String> bookedSeats;
     private List<String> lockedSeats;
+    private ShowResponse show;
 
     @Data
     @Builder

@@ -19,8 +19,8 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
     @Query("SELECT bs FROM BookingSeat bs WHERE bs.booking.show.id = :showId AND bs.seatStatus = 'BOOKED'")
     List<BookingSeat> findByShowIdAndBooked(@Param("showId") Long showId);
 
-    // Find booked seat IDs by show
-    @Query("SELECT bs.seat.id FROM BookingSeat bs WHERE bs.booking.show.id = :showId AND bs.booking.bookingStatus = 'CONFIRMED' AND bs.seatStatus = 'BOOKED'")
+    // Find booked seat IDs by show (including PENDING bookings to prevent double booking)
+    @Query("SELECT bs.seat.id FROM BookingSeat bs WHERE bs.booking.show.id = :showId AND bs.booking.bookingStatus IN ('CONFIRMED', 'PENDING') AND bs.seatStatus = 'BOOKED'")
     Set<Long> findBookedSeatIdsByShowId(@Param("showId") Long showId);
 
     // Find booking seats by seat

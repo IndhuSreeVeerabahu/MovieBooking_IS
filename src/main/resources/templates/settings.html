@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
     <link rel="stylesheet" href="/css/validation.css">
     <script src="/js/notification-system.js"></script>
     <script>
@@ -49,7 +50,7 @@
                         <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
                         <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
                     </div>
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-white font-semibold text-sm" th:text="${user.firstName.substring(0,1)}">U</span>
@@ -57,7 +58,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Dashboard</a>
                             <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Profile</a>
                             <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
@@ -81,7 +82,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">

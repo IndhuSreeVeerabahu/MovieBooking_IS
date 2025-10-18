@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${movie.title + ' - MovieHub'}">Movie Details - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
     <link rel="stylesheet" href="/css/validation.css">
     <script src="/js/notification-system.js"></script>
     <script>
@@ -112,7 +113,7 @@
                         <p class="text-white font-medium" th:text="${user.firstName + ' ' + user.lastName}">User Name</p>
                         <p class="text-gray-400 text-sm" th:text="${user.email}">user@example.com</p>
                     </div>
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()" class="flex items-center text-gray-300 hover:text-white focus:outline-none">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-white font-semibold text-sm" th:text="${user.firstName != null ? user.firstName.substring(0,1) : 'U'}">U</span>
@@ -120,7 +121,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-700 py-1" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <a href="/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Profile</a>
                             <a href="/bookings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">My Bookings</a>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">Settings</a>
@@ -149,7 +150,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style="z-index: 1 !important;">
         <!-- Movie Info Section -->
         <div class="movie-card rounded-lg p-8 mb-8">
@@ -162,7 +162,6 @@
                          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQ1MCIgZmlsbD0iIzJBMkEyQSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gUG9zdGVyPC90ZXh0Pgo8L3N2Zz4='">
                 </div>
                 
-                <!-- Movie Details -->
                 <div class="lg:w-2/3">
                     <h1 class="text-4xl font-bold text-white mb-4" th:text="${movie.title}">Movie Title</h1>
                     
@@ -223,9 +222,19 @@
                 <div class="text-center py-12 text-gray-400">
                     <div class="flex items-center justify-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-bms-red"></div>
-                        <span class="ml-2">Select a city and date to view theaters and showtimes</span>
+                        <span class="ml-2">Loading theaters and showtimes...</span>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="mt-6 p-4 bg-blue-900 bg-opacity-30 border border-blue-500 rounded-lg">
+                <h3 class="text-white font-semibold mb-2">📋 How to Book Tickets:</h3>
+                <ol class="text-gray-300 text-sm space-y-1">
+                    <li>1. Select your preferred city and date above</li>
+                    <li>2. Choose a theater and showtime from the options below</li>
+                    <li>3. Click "Book Tickets" to proceed to seat selection</li>
+                </ol>
             </div>
         </div>
     </main>
@@ -254,14 +263,31 @@
             }
         });
 
-        // Load cities
+        // Load cities from server-side data or API
         async function loadCities() {
             try {
-                const response = await fetch('/api/theaters');
-                const theatersData = await response.json();
-                
-                const cities = [...new Set(theatersData.map(theater => theater.city))].sort();
                 const citySelect = document.getElementById('citySelect');
+                let cities = [];
+                
+                // Try to use server-side data first
+                const serverTheatersWithShows = /*[[${theatersWithShows}]]*/ [];
+                console.log('Loading cities from server data:', serverTheatersWithShows);
+                
+                if (serverTheatersWithShows && serverTheatersWithShows.length > 0) {
+                    cities = [...new Set(serverTheatersWithShows.map(theater => theater.city))].sort();
+                    console.log('Cities from server data:', cities);
+                } else {
+                    // Fallback to API call
+                    try {
+                        const response = await fetch('/api/theaters/cities');
+                        if (response.ok) {
+                            cities = await response.json();
+                            console.log('Cities from API:', cities);
+                        }
+                    } catch (apiError) {
+                        console.warn('Failed to load cities from API:', apiError);
+                    }
+                }
                 
                 citySelect.innerHTML = '<option value="">Choose a city...</option>';
                 cities.forEach(city => {
@@ -270,19 +296,44 @@
                     option.textContent = city;
                     citySelect.appendChild(option);
                 });
+                
+                // Set default city (Chennai) if available
+                const defaultCity = /*[[${defaultCity}]]*/ 'Chennai';
+                
+                if (defaultCity && cities.includes(defaultCity)) {
+                    citySelect.value = defaultCity;
+                } else if (cities.length > 0) {
+                    // Fallback to first city if Chennai not available
+                    citySelect.value = cities[0];
+                }
+                
+                return cities;
             } catch (error) {
                 console.error('Error loading cities:', error);
+                throw error; // Re-throw to handle in the catch block
             }
         }
 
         // Load theaters and shows for selected city and date
         async function loadTheatersAndShows() {
             const city = document.getElementById('citySelect').value;
-            const date = document.getElementById('dateSelect').value;
+            const date = ensureDateIsSet(); // Ensure date is always set
+            
+            console.log('=== LOADING THEATERS AND SHOWS ===');
+            console.log('City:', city);
+            console.log('Date:', date);
+            console.log('Date type:', typeof date);
+            console.log('Date length:', date ? date.length : 'null/undefined');
             
             if (!city || !date) {
+                console.log('Missing city or date, not loading');
+                console.log('City missing:', !city);
+                console.log('Date missing:', !date);
                 return;
             }
+
+            // Create selectedDate object early to avoid reference errors
+            const selectedDate = new Date(date);
 
             const theatersContainer = document.getElementById('theatersContainer');
             theatersContainer.innerHTML = `
@@ -295,46 +346,173 @@
             `;
 
             try {
-                // Get theaters for the city
-                const theatersResponse = await fetch(`/api/theaters/city/${encodeURIComponent(city)}`);
-                const theatersData = await theatersResponse.json();
+                // Use server-side data that's already loaded
+                const serverTheatersWithShows = /*[[${theatersWithShows}]]*/ [];
                 
-                if (theatersData.length === 0) {
+                if (!serverTheatersWithShows || serverTheatersWithShows.length === 0) {
+                    
+                    // Try API fallback with cache busting
+                    try {
+                        const timestamp = new Date().getTime();
+                        const response = await fetch(`/api/shows/movie/${currentMovieId}?t=${timestamp}`);
+                        if (response.ok) {
+                            const apiShows = await response.json();
+                            console.log('API shows response (fresh data):', apiShows);
+                            
+                            if (apiShows.length > 0) {
+                                // Group shows by theater
+                                const theatersMap = new Map();
+                                apiShows.forEach(show => {
+                                    if (!theatersMap.has(show.theaterId)) {
+                                        theatersMap.set(show.theaterId, {
+                                            id: show.theaterId,
+                                            name: show.theaterName,
+                                            city: 'Chennai', // Default city
+                                            fullAddress: show.theaterName + ', Chennai', // Default address
+                                            totalScreens: 1, // Default screen count
+                                            amenities: 'Standard', // Default amenities
+                                            shows: []
+                                        });
+                                    }
+                                    theatersMap.get(show.theaterId).shows.push(show);
+                                });
+                                
+                                const apiTheatersWithShows = Array.from(theatersMap.values());
+                                console.log('API theaters with shows:', apiTheatersWithShows);
+                                
+                                // Use API data for filtering
+                                const filteredTheaters = apiTheatersWithShows
+                                    .filter(theater => theater.city === city)
+                                    .map(theater => {
+                                        const filteredShows = theater.shows.filter(show => {
+                                            let showDate;
+                                            if (show.showDate.includes('T')) {
+                                                showDate = new Date(show.showDate);
+                                            } else {
+                                                showDate = new Date(show.showDate + 'T00:00:00');
+                                            }
+                                            const matches = showDate.toDateString() === selectedDate.toDateString();
+                                            console.log('API Show date string:', show.showDate, 'Show date object:', showDate, 'Selected date:', selectedDate, 'matches:', matches);
+                                            return matches;
+                                        });
+                                        return {
+                                            ...theater,
+                                            shows: filteredShows
+                                        };
+                                    })
+                                    .filter(theater => theater.shows.length > 0);
+                                
+                                if (filteredTheaters.length > 0) {
+                                    displayTheatersAndShows(filteredTheaters);
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (apiError) {
+                        console.error('API fallback failed:', apiError);
+                    }
+                    
                     theatersContainer.innerHTML = `
                         <div class="text-center py-12 text-gray-400">
-                            <p class="text-xl">No theaters found in ${city}</p>
-                            <p class="text-sm">Try selecting a different city</p>
+                            <p class="text-xl">No shows available for this movie</p>
+                            <p class="text-sm">Please check back later or try a different movie</p>
                         </div>
                     `;
                     return;
                 }
 
-                // Get shows for each theater
-                const theatersWithShows = [];
-                for (const theater of theatersData) {
-                    try {
-                        const showsResponse = await fetch(`/api/shows/movie/${currentMovieId}/theater/${theater.id}`);
-                        const theaterShows = await showsResponse.json();
-                        
-                        // Filter shows for the selected date
-                        const selectedDate = new Date(date);
-                        const filteredShows = theaterShows.filter(show => {
-                            const showDate = new Date(show.showDate);
-                            return showDate.toDateString() === selectedDate.toDateString();
+                // Filter theaters by city and shows by date
+                console.log('Selected date object:', selectedDate);
+                console.log('Selected date string:', date);
+                
+                const filteredTheaters = serverTheatersWithShows
+                    .filter(theater => {
+                        console.log('Checking theater:', theater.name, 'city:', theater.city, 'matches:', theater.city === city);
+                        return theater.city === city;
+                    })
+                    .map(theater => {
+                        console.log('Processing theater:', theater.name, 'with shows:', theater.shows);
+                        const filteredShows = theater.shows.filter(show => {
+                            // Handle different date formats
+                            let showDate;
+                            if (show.showDate.includes('T')) {
+                                showDate = new Date(show.showDate);
+                            } else {
+                                showDate = new Date(show.showDate + 'T00:00:00');
+                            }
+                            
+                            const matches = showDate.toDateString() === selectedDate.toDateString();
+                            console.log('=== SHOW FILTERING DEBUG ===');
+                            console.log('Show ID:', show.id);
+                            console.log('Show date string:', show.showDate);
+                            console.log('Show date object:', showDate);
+                            console.log('Show date toDateString():', showDate.toDateString());
+                            console.log('Selected date:', selectedDate);
+                            console.log('Selected date toDateString():', selectedDate.toDateString());
+                            console.log('Matches:', matches);
+                            console.log('============================');
+                            return matches;
                         });
+                        console.log('Filtered shows for', theater.name, ':', filteredShows.length);
+                        return {
+                            ...theater,
+                            shows: filteredShows
+                        };
+                    })
+                    .filter(theater => theater.shows.length > 0);
 
-                        if (filteredShows.length > 0) {
-                            theatersWithShows.push({
+                console.log('Final filtered theaters:', filteredTheaters.length);
+
+                if (filteredTheaters.length === 0) {
+                    // If no shows for today, try tomorrow automatically
+                    const tomorrow = new Date(selectedDate);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowString = tomorrow.toISOString().split('T')[0];
+                    
+                    console.log('No shows for today, trying tomorrow:', tomorrowString);
+                    
+                    // Try tomorrow's shows
+                    const tomorrowTheaters = serverTheatersWithShows
+                        .filter(theater => theater.city === city)
+                        .map(theater => {
+                            const filteredShows = theater.shows.filter(show => {
+                                let showDate;
+                                if (show.showDate.includes('T')) {
+                                    showDate = new Date(show.showDate);
+                                } else {
+                                    showDate = new Date(show.showDate + 'T00:00:00');
+                                }
+                                return showDate.toDateString() === tomorrow.toDateString();
+                            });
+                            return {
                                 ...theater,
                                 shows: filteredShows
-                            });
-                        }
-                    } catch (error) {
-                        console.error(`Error loading shows for theater ${theater.id}:`, error);
+                            };
+                        })
+                        .filter(theater => theater.shows.length > 0);
+                    
+                    if (tomorrowTheaters.length > 0) {
+                        console.log('Found shows for tomorrow, updating date and showing shows');
+                        document.getElementById('dateSelect').value = tomorrowString;
+                        displayTheatersAndShows(tomorrowTheaters);
+                        return;
                     }
+                    
+                    theatersContainer.innerHTML = `
+                        <div class="text-center py-12 text-gray-400">
+                            <p class="text-xl">No showtimes available for ${city} on ${selectedDate.toLocaleDateString()}</p>
+                            <p class="text-sm">Try selecting a different date or city</p>
+                            <div class="mt-4">
+                                <button onclick="setDateToTomorrow()" class="bg-bms-red hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                    Try Tomorrow
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    return;
                 }
 
-                displayTheatersAndShows(theatersWithShows);
+                displayTheatersAndShows(filteredTheaters);
             } catch (error) {
                 console.error('Error loading theaters and shows:', error);
                 theatersContainer.innerHTML = `
@@ -368,7 +546,7 @@
                                 <h3 class="text-xl font-semibold text-white mb-2">${theater.name}</h3>
                                 <p class="text-gray-400 text-sm">${theater.fullAddress}</p>
                                 <div class="flex items-center mt-2">
-                                    <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded mr-2">${theater.totalScreens} Screens</span>
+                                    <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded mr-2">${theater.totalScreens || theater.screens?.length || 'N/A'} Screens</span>
                                     ${theater.amenities ? `<span class="text-xs text-gray-400">${theater.amenities}</span>` : ''}
                                 </div>
                             </div>
@@ -378,7 +556,9 @@
                 `;
                 
                 theater.shows.forEach(show => {
-                    const showTime = new Date(show.showDate).toLocaleTimeString('en-US', {
+                    // Use the actual show time from the database, not the date
+                    const showTime = show.showTime || show.formattedShowTime || '00:00';
+                    const formattedTime = new Date(`2000-01-01T${showTime}`).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: true
@@ -386,9 +566,9 @@
                     
                     html += `
                         <button class="showtime-btn px-4 py-3 rounded-lg text-white font-medium text-sm"
-                                onclick="selectShowtime(${show.id}, '${theater.name}', '${show.screenName}', '${showTime}', ${show.basePrice})">
+                                onclick="selectShowtime(${show.id}, '${theater.name}', '${show.screenName}', '${formattedTime}', ${show.basePrice})">
                             <div class="text-center">
-                                <div class="font-semibold">${showTime}</div>
+                                <div class="font-semibold">${formattedTime}</div>
                                 <div class="text-xs text-gray-300 mt-1">${show.screenName}</div>
                                 <div class="text-xs text-gray-300">₹${show.basePrice}</div>
                             </div>
@@ -406,6 +586,8 @@
         }
 
         function selectShowtime(showId, theaterName, screenName, showTime, price) {
+            console.log('Selected showtime - Show ID:', showId, 'Theater:', theaterName, 'Screen:', screenName, 'Time:', showTime, 'Price:', price);
+            
             // Remove previous selection
             document.querySelectorAll('.showtime-btn').forEach(btn => {
                 btn.classList.remove('selected');
@@ -415,6 +597,7 @@
             event.target.closest('.showtime-btn').classList.add('selected');
             
             selectedShowId = showId;
+            console.log('Set selectedShowId to:', selectedShowId);
             
             // Show booking button
             showBookingButton(theaterName, screenName, showTime, price);
@@ -448,33 +631,182 @@
         }
 
         function proceedToBooking() {
+            console.log('Proceeding to booking with showId:', selectedShowId);
+            
             if (!selectedShowId) {
-                window.notificationSystem.warning(
-                    'Please select a showtime before proceeding to booking.',
-                    {
-                        title: 'Showtime Required',
-                        duration: 4000
-                    }
-                );
+                // Check if theaters and shows are loaded
+                const theatersContainer = document.getElementById('theatersContainer');
+                const hasTheaters = theatersContainer.innerHTML.includes('theater-card');
+                
+                if (!hasTheaters) {
+                    window.notificationSystem.warning(
+                        'Please select a city and date first to view available showtimes.',
+                        {
+                            title: 'Select City & Date',
+                            duration: 5000
+                        }
+                    );
+                } else {
+                    window.notificationSystem.warning(
+                        'Please select a showtime from the available options below.',
+                        {
+                            title: 'Select Showtime',
+                            duration: 5000
+                        }
+                    );
+                }
                 return;
             }
             
+            console.log('Redirecting to booking page with showId:', selectedShowId);
             window.location.href = `/booking?showId=${selectedShowId}`;
         }
+
+        // Helper function to set date to tomorrow
+        function setDateToTomorrow() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowString = tomorrow.toISOString().split('T')[0];
+            
+            document.getElementById('dateSelect').value = tomorrowString;
+            loadTheatersAndShows();
+        }
+
+        // Helper function to ensure date is set
+        function ensureDateIsSet() {
+            const dateSelect = document.getElementById('dateSelect');
+            if (!dateSelect.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateSelect.value = today;
+                console.log('Date was not set, setting to today:', today);
+                // Trigger change event to ensure event listeners are notified
+                dateSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                return today;
+            }
+            return dateSelect.value;
+        }
+
+        // Function to manually trigger initial loading (can be called from console for debugging)
+        function triggerInitialLoading() {
+            console.log('=== MANUALLY TRIGGERING INITIAL LOADING ===');
+            const city = document.getElementById('citySelect').value;
+            const date = ensureDateIsSet();
+            console.log('City:', city, 'Date:', date);
+            
+            if (city && date) {
+                loadTheatersAndShows();
+            } else {
+                console.log('Cannot load - missing city or date');
+            }
+        }
+
 
         // Event listeners
         document.getElementById('citySelect').addEventListener('change', loadTheatersAndShows);
         document.getElementById('dateSelect').addEventListener('change', loadTheatersAndShows);
 
-        // Set default date to today
+        // Set default date to today and load data
         document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateSelect').value = today;
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.value = today;
             
-            // Get movie ID from Thymeleaf template
-            currentMovieId = /*[[${movie.id}]]*/ 604; // Use actual movie ID from backend
+            // Set minimum date to today
+            dateSelect.min = today;
             
-            loadCities();
+            currentMovieId = /*[[${movie.id}]]*/ null;
+            
+            if (!currentMovieId) {
+                const urlPath = window.location.pathname;
+                const match = urlPath.match(/\/movie\/(\d+)/);
+                if (match) {
+                    currentMovieId = parseInt(match[1]);
+                }
+            }
+            
+            
+            const timestamp = new Date().getTime();
+            fetch(`/api/shows/movie/${currentMovieId}?t=${timestamp}`)
+                .then(response => response.json())
+                .then(shows => {
+                })
+                .catch(error => {
+                    console.error('Error fetching shows:', error);
+                });
+            
+            loadCities().then(() => {
+                // Auto-load theaters and shows after cities are loaded
+                const serverTheatersWithShows = /*[[${theatersWithShows}]]*/ [];
+                
+                if (serverTheatersWithShows && serverTheatersWithShows.length > 0) {
+                    const cities = [...new Set(serverTheatersWithShows.map(theater => theater.city))];
+                    
+                    const defaultCity = /*[[${defaultCity}]]*/ 'Chennai';
+                    if (defaultCity && cities.includes(defaultCity)) {
+                        document.getElementById('citySelect').value = defaultCity;
+                    } else if (cities.length > 0) {
+                        document.getElementById('citySelect').value = cities[0];
+                    }
+                    
+                    console.log('Selected city:', document.getElementById('citySelect').value);
+                    console.log('Selected date:', document.getElementById('dateSelect').value);
+                    
+                    // Trigger loading of theaters and shows if a city is selected
+                    if (document.getElementById('citySelect').value) {
+                        // Ensure date is properly set before loading
+                        const currentDate = document.getElementById('dateSelect').value;
+                        if (!currentDate) {
+                            console.log('Date not set, setting to today');
+                            document.getElementById('dateSelect').value = today;
+                        }
+                        
+                        // Use requestAnimationFrame to ensure DOM is fully rendered, then load
+                        requestAnimationFrame(() => {
+                            setTimeout(() => {
+                                console.log('Auto-loading theaters and shows with city:', document.getElementById('citySelect').value, 'date:', document.getElementById('dateSelect').value);
+                                loadTheatersAndShows();
+                            }, 100);
+                        });
+                    }
+                } else {
+                    console.log('No server theaters with shows found - will rely on API fallback');
+                    // Set default city and trigger API fallback
+                    const defaultCity = /*[[${defaultCity}]]*/ 'Chennai';
+                    if (defaultCity) {
+                        document.getElementById('citySelect').value = defaultCity;
+                        console.log('Set default city to:', defaultCity);
+                    }
+                    
+                    // Ensure date is properly set before loading
+                    const currentDate = document.getElementById('dateSelect').value;
+                    if (!currentDate) {
+                        console.log('Date not set, setting to today');
+                        document.getElementById('dateSelect').value = today;
+                    }
+                    
+                    // Always try to load theaters and shows via API fallback
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            console.log('API fallback - loading theaters and shows with city:', document.getElementById('citySelect').value, 'date:', document.getElementById('dateSelect').value);
+                            loadTheatersAndShows();
+                        }, 100);
+                    });
+                }
+            }).catch(error => {
+                console.error('Error loading cities:', error);
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        // Ensure date is set before loading
+                        const currentDate = document.getElementById('dateSelect').value;
+                        if (!currentDate) {
+                            document.getElementById('dateSelect').value = today;
+                        }
+                        loadTheatersAndShows();
+                    }, 100);
+                });
+            });
         });
 
     </script>

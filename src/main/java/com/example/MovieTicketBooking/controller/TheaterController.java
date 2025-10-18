@@ -82,6 +82,21 @@ public class TheaterController {
     }
 
     /**
+     * Get all cities from theaters
+     */
+    @GetMapping("/cities")
+    public ResponseEntity<List<String>> getAllCities() {
+        try {
+            log.info("Fetching all cities from theaters");
+            List<String> cities = theaterService.getAllCities();
+            return ResponseEntity.ok(cities);
+        } catch (Exception e) {
+            log.error("Error fetching cities", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
      * Get theaters by city
      */
     @GetMapping("/city/{city}")

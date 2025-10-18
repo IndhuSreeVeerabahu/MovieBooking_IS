@@ -112,7 +112,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-1 w-48 rounded-lg py-1" style="position: absolute; z-index: 99999; background: #2A2A2A; border: 1px solid #374151; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Admin Dashboard</a>
                             <a href="/admin/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Movie Management</a>
                             <a href="/admin/users" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">User Management</a>
@@ -131,7 +131,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
@@ -425,7 +424,6 @@
             } catch (error) {
                 console.error('Error loading movies:', error);
                 
-                // Fallback to mock data if API fails
                 const mockMovies = [
                     {
                         id: 1,
@@ -778,16 +776,25 @@
             const movie = movies.find(m => m.id === movieId);
             const movieTitle = movie ? movie.title : 'this movie';
             
+            
             if (confirm(`Are you sure you want to remove "${movieTitle}" from the system?\n\nThis action will deactivate the movie and it will no longer be available for bookings. This action cannot be undone.`)) {
                 try {
+                    console.log('Sending DELETE request to:', `/api/movies/${movieId}`);
                     const response = await fetch(`/api/movies/${movieId}`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
                         }
                     });
+                    
+                    console.log('Delete response status:', response.status, response.ok);
 
                     if (response.ok) {
+                        // Remove movie from local array immediately
+                        movies = movies.filter(m => m.id !== movieId);
+                        filteredMovies = filteredMovies.filter(m => m.id !== movieId);
+                        displayMovies(); // Update display immediately
+                        
                         // Show professional success message
                         window.notificationSystem.success(
                             'The movie has been removed from the system successfully.',
@@ -796,7 +803,11 @@
                                 duration: 4000
                             }
                         );
-                        loadMovies(); // Refresh the list
+                        
+                        // Also refresh from server to ensure consistency
+                        setTimeout(() => {
+                            loadMovies();
+                        }, 1000);
                     } else {
                         let errorMessage = 'Unable to delete the movie. Please try again.';
                         try {
@@ -865,7 +876,6 @@
                 isFeatured: document.getElementById('movieIsFeatured').checked
             };
             
-            console.log('Sending movie data:', movieData);
 
             try {
                 const url = isEdit ? `/api/movies/${movieId}` : '/api/movies';
@@ -880,17 +890,24 @@
                 });
 
                 if (response.ok) {
+                    console.log('Movie saved successfully, closing modal and refreshing list');
+                    
+                    // Always close modal and refresh list first
                     closeMovieModal();
                     loadMovies(); // Refresh the list
                     
                     // Show professional success message
-                    window.notificationSystem.success(
-                        isEdit ? 'The movie information has been updated successfully.' : 'The new movie has been added to the system successfully.',
-                        {
-                            title: isEdit ? 'Movie Updated' : 'Movie Added',
-                            duration: 4000
-                        }
-                    );
+                    if (window.notificationSystem) {
+                        window.notificationSystem.success(
+                            isEdit ? 'The movie information has been updated successfully.' : 'The new movie has been added to the system successfully.',
+                            {
+                                title: isEdit ? 'Movie Updated' : 'Movie Added',
+                                duration: 4000
+                            }
+                        );
+                    } else {
+                        alert(isEdit ? 'Movie updated successfully!' : 'Movie added successfully!');
+                    }
                 } else {
                     let errorMessage = isEdit ? 'Unable to update the movie. Please check your input and try again.' : 'Unable to add the movie. Please check your input and try again.';
                     try {
@@ -902,23 +919,31 @@
                         // If response is not JSON, use default message
                     }
                     
-                    window.notificationSystem.error(
-                        errorMessage,
-                        {
-                            title: isEdit ? 'Update Failed' : 'Addition Failed',
-                            duration: 6000
-                        }
-                    );
+                    if (window.notificationSystem) {
+                        window.notificationSystem.error(
+                            errorMessage,
+                            {
+                                title: isEdit ? 'Update Failed' : 'Addition Failed',
+                                duration: 6000
+                            }
+                        );
+                    } else {
+                        alert(errorMessage);
+                    }
                 }
             } catch (error) {
                 console.error('Error saving movie:', error);
-                window.notificationSystem.error(
-                    'A network error occurred. Please check your connection and try again.',
-                    {
-                        title: 'Connection Error',
-                        duration: 0 // Don't auto-hide network errors
-                    }
-                );
+                if (window.notificationSystem) {
+                    window.notificationSystem.error(
+                        'A network error occurred. Please check your connection and try again.',
+                        {
+                            title: 'Connection Error',
+                            duration: 0 // Don't auto-hide network errors
+                        }
+                    );
+                } else {
+                    alert('A network error occurred. Please check your connection and try again.');
+                }
             }
         });
 

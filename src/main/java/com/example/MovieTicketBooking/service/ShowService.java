@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +30,7 @@ public class ShowService {
     private final MovieRepository movieRepository;
     private final TheaterRepository theaterRepository;
     private final ScreenRepository screenRepository;
+    private final EntityManager entityManager;
 
     /**
      * Create a new show
@@ -101,8 +104,14 @@ public class ShowService {
      */
     @Transactional(readOnly = true)
     public List<ShowResponse> getShowsByMovie(Long movieId) {
-        log.info("Fetching shows for movie: {}", movieId);
+        log.info("Fetching shows for movie: {} - Force fresh data from database", movieId);
+        
+        // Force fresh data by clearing any potential entity manager cache
+        entityManager.clear();
+        
         List<Show> shows = showRepository.findByMovieIdAndIsActiveTrueOrderByShowDateAscShowTimeAsc(movieId);
+        log.info("Fresh database query returned {} shows for movie {}", shows.size(), movieId);
+        
         return shows.stream()
                 .map(this::mapToShowResponse)
                 .collect(Collectors.toList());
@@ -125,8 +134,14 @@ public class ShowService {
      */
     @Transactional(readOnly = true)
     public List<ShowResponse> getShowsByMovieAndTheater(Long movieId, Long theaterId) {
-        log.info("Fetching shows for movie: {} at theater: {}", movieId, theaterId);
+        log.info("Fetching shows for movie: {} at theater: {} - Force fresh data from database", movieId, theaterId);
+        
+        // Force fresh data by clearing any potential entity manager cache
+        entityManager.clear();
+        
         List<Show> shows = showRepository.findByMovieIdAndTheaterIdAndIsActiveTrueOrderByShowDateAscShowTimeAsc(movieId, theaterId);
+        log.info("Fresh database query returned {} shows for movie {} at theater {}", shows.size(), movieId, theaterId);
+        
         return shows.stream()
                 .map(this::mapToShowResponse)
                 .collect(Collectors.toList());
@@ -149,20 +164,35 @@ public class ShowService {
      */
     @Transactional(readOnly = true)
     public ShowResponse getShowById(Long showId) {
-        log.info("Fetching show by ID: {}", showId);
+        log.info("Fetching show by ID: {} - Force fresh data from database", showId);
+        
+        // Force fresh data by clearing any potential entity manager cache
+        entityManager.clear();
+        
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new RuntimeException("Show not found with ID: " + showId));
+        
+        log.info("Fresh database query - Found show ID: {} for movie: {} (ID: {}) - Time: {}", 
+                show.getId(), 
+                show.getMovie() != null ? show.getMovie().getTitle() : "Unknown", 
+                show.getMovie() != null ? show.getMovie().getId() : "Unknown",
+                show.getShowTime());
+        
         return mapToShowResponse(show);
     }
 
     /**
      * Update show
      */
+    @Transactional
     public ShowResponse updateShow(Long showId, ShowRequest request) {
-        log.info("Updating show: {}", showId);
+        log.info("Updating show: {} with request: {}", showId, request);
         
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new RuntimeException("Show not found with ID: " + showId));
+        
+        log.info("Current show details - Date: {}, Time: {}, Status: {}, Active: {}", 
+                show.getShowDate(), show.getShowTime(), show.getShowStatus(), show.getIsActive());
 
         // Validate movie exists and is active
         Movie movie = movieRepository.findById(request.getMovieId())
@@ -215,9 +245,25 @@ public class ShowService {
         show.setVipPrice(request.getVipPrice());
 
         Show updatedShow = showRepository.save(show);
-        log.info("Show updated successfully: {}", showId);
+        log.info("Show updated successfully: {} - New Date: {}, New Time: {}, New Status: {}, New Active: {}", 
+                showId, updatedShow.getShowDate(), updatedShow.getShowTime(), 
+                updatedShow.getShowStatus(), updatedShow.getIsActive());
         
-        return mapToShowResponse(updatedShow);
+        // Force entity manager to flush changes to database immediately
+        entityManager.flush();
+        
+        // Clear entity manager cache to ensure fresh data on next read
+        entityManager.clear();
+        
+        // Force a fresh fetch to ensure we get the latest data
+        Show freshShow = showRepository.findById(showId)
+                .orElseThrow(() -> new RuntimeException("Show not found after update"));
+        
+        log.info("Fresh show data after update - Date: {}, Time: {}, Status: {}, Active: {}", 
+                freshShow.getShowDate(), freshShow.getShowTime(), 
+                freshShow.getShowStatus(), freshShow.getIsActive());
+        
+        return mapToShowResponse(freshShow);
     }
 
     /**

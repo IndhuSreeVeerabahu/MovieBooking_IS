@@ -99,6 +99,12 @@ class FormValidator {
      * @returns {boolean} - Whether the field is valid
      */
     validateField(field, customRules = {}) {
+        // Check if field exists and has required properties
+        if (!field || !field.name) {
+            console.warn('validateField called with invalid field:', field);
+            return { isValid: false, message: 'Invalid field' };
+        }
+        
         const value = field.value.trim();
         const fieldName = field.name;
         const fieldType = field.type;
@@ -232,6 +238,12 @@ class FormValidator {
      * @param {HTMLElement} field - The field to clear error from
      */
     clearFieldError(field) {
+        // Check if field exists and has a name property
+        if (!field || !field.name) {
+            console.warn('clearFieldError called with invalid field:', field);
+            return;
+        }
+        
         const fieldName = field.name;
         const errorElement = document.getElementById(fieldName + 'Error');
         
@@ -259,6 +271,11 @@ class FormValidator {
      * @param {Event} event - Input event
      */
     clearError(event) {
+        // Check if event and target exist
+        if (!event || !event.target) {
+            console.warn('clearError called with invalid event:', event);
+            return;
+        }
         this.clearFieldError(event.target);
     }
     

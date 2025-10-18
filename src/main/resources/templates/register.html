@@ -59,7 +59,6 @@
     <div class="fixed bottom-10 right-10 w-32 h-32 bg-bms-red/5 rounded-full blur-2xl"></div>
     <div class="fixed top-1/2 left-1/4 w-16 h-16 bg-bms-red/10 rounded-full blur-lg"></div>
     
-    <!-- Main Container -->
     <div class="relative z-10 w-full max-w-md mx-4">
         <!-- Logo/Brand -->
         <div class="text-center mb-6">
@@ -116,7 +115,6 @@
                     </div>
                 </div>
 
-                <!-- Email Field -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
                         Email Address <span class="text-red-400">*</span>
@@ -269,6 +267,24 @@
             // The form validation is automatically initialized by the form-validation.js script
             // due to the data-validation="true" attribute on the form
             console.log('Registration form validation initialized');
+            
+            // Convert flash messages to notifications
+            const errorMessage = /*[[${error}]]*/ null;
+            const successMessage = /*[[${success}]]*/ null;
+            
+            if (errorMessage && window.notificationSystem) {
+                window.notificationSystem.error(errorMessage, {
+                    title: 'Registration Failed',
+                    duration: 6000
+                });
+            }
+            
+            if (successMessage && window.notificationSystem) {
+                window.notificationSystem.success(successMessage, {
+                    title: 'Registration Successful',
+                    duration: 4000
+                });
+            }
         });
     </script>
 </body>

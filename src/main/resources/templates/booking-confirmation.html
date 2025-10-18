@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Confirmation - MovieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/admin-ui-fixes.css">
     <link rel="stylesheet" href="/css/validation.css">
     <script src="/js/notification-system.js"></script>
     <script>
@@ -88,7 +89,7 @@
                 
                 <!-- User Menu -->
                 <div class="flex items-center space-x-4">
-                    <div class="relative" style="z-index: 99999 !important;">
+                    <div class="relative">
                         <button id="userMenuButton" class="flex items-center space-x-2 text-white hover:text-bms-red transition-colors">
                             <div class="w-8 h-8 bg-bms-red rounded-full flex items-center justify-center">
                                 <span class="text-sm font-semibold" th:text="${user.firstName.charAt(0)}">U</span>
@@ -97,7 +98,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-bms-gray rounded-lg shadow-lg border border-gray-600" style="z-index: 99999 !important;">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
                             <div class="py-1">
                                 <a href="/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white">
                                     Dashboard
@@ -119,7 +120,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Success Header -->
         <div class="text-center mb-12">
@@ -133,7 +133,6 @@
             <p class="text-sm text-gray-400 mt-2">Booking Reference: <span class="font-mono text-bms-red" th:text="${bookingReference}">BOOK123456</span></p>
         </div>
 
-        <!-- Booking Details Card -->
         <div class="ticket-card p-8 mb-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Movie Info -->
@@ -144,33 +143,32 @@
                             <img id="moviePoster" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNGODQ0NjQiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1vdmllPC90ZXh0Pgo8L3N2Zz4=" 
                                  alt="Movie Poster" class="w-16 h-24 object-cover rounded-lg">
                             <div>
-                                <h3 id="movieTitle" class="text-xl font-semibold text-white">Movie Title</h3>
-                                <p id="movieGenre" class="text-gray-400 text-sm">Action, Adventure</p>
-                                <p id="movieDuration" class="text-gray-400 text-sm">2h 30m</p>
+                                <h3 class="text-xl font-semibold text-white" th:text="${booking.movieTitle}">Movie Title</h3>
+                                <p class="text-gray-400 text-sm">Action, Adventure</p>
+                                <p class="text-gray-400 text-sm">2h 30m</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Show Details -->
                 <div>
                     <h2 class="text-2xl font-bold text-white mb-6">Show Details</h2>
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="text-gray-400">Theater:</span>
-                            <span id="theaterName" class="text-white font-medium">CineMax Theater</span>
+                            <span class="text-white font-medium" th:text="${booking.theaterName}">CineMax Theater</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Screen:</span>
-                            <span id="screenName" class="text-white font-medium">Screen 1</span>
+                            <span class="text-white font-medium">Screen 1</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Date & Time:</span>
-                            <span id="showDateTime" class="text-white font-medium">Today, 7:00 PM</span>
+                            <span class="text-white font-medium" th:text="${#temporals.format(booking.showDateTime, 'MMM dd, yyyy - HH:mm')}">Today, 7:00 PM</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Seats:</span>
-                            <span id="seatNumbers" class="text-white font-medium">A1, A2</span>
+                            <span class="text-white font-medium" th:text="${#strings.listJoin(booking.seatNumbers, ', ')}">A1, A2</span>
                         </div>
                     </div>
                 </div>
@@ -183,24 +181,24 @@
             <div class="space-y-3">
                 <div class="flex justify-between">
                     <span class="text-gray-400">Ticket Price:</span>
-                    <span id="ticketPrice" class="text-white">₹800.00</span>
+                    <span class="text-white" th:text="'₹' + ${booking.totalAmount - booking.bookingFee - booking.taxAmount}">₹800.00</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Booking Fee:</span>
-                    <span id="bookingFee" class="text-white">₹50.00</span>
+                    <span class="text-white" th:text="'₹' + ${booking.bookingFee}">₹50.00</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-400">Tax:</span>
-                    <span id="taxAmount" class="text-white">₹85.00</span>
+                    <span class="text-white" th:text="'₹' + ${booking.taxAmount}">₹85.00</span>
                 </div>
                 <hr class="border-gray-600">
                 <div class="flex justify-between text-lg font-semibold">
                     <span class="text-white">Total Paid:</span>
-                    <span id="totalAmount" class="text-bms-red">₹935.00</span>
+                    <span class="text-bms-red" th:text="'₹' + ${booking.totalAmount}">₹935.00</span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-400">Payment Method:</span>
-                    <span id="paymentMethod" class="text-white">Credit Card</span>
+                    <span class="text-white" th:text="${booking.paymentMethod}">Credit Card</span>
                 </div>
             </div>
         </div>
@@ -265,42 +263,6 @@
             }
         });
 
-        // Load booking details from URL parameters or localStorage
-        function loadBookingDetails() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const bookingRef = urlParams.get('bookingReference') || 'BOOK123456';
-            
-            // In a real application, you would fetch booking details from the server
-            // For now, we'll use mock data
-            const mockBooking = {
-                movieTitle: 'Salaar 2',
-                movieGenre: 'Action, Adventure',
-                movieDuration: '3h 1m',
-                theaterName: 'CineMax Theater',
-                screenName: 'Screen 1',
-                showDateTime: 'Today, 7:00 PM',
-                seatNumbers: 'A1, A2',
-                ticketPrice: '₹800.00',
-                bookingFee: '₹50.00',
-                taxAmount: '₹85.00',
-                totalAmount: '₹935.00',
-                paymentMethod: 'Credit Card'
-            };
-
-            // Update the page with booking details
-            document.getElementById('movieTitle').textContent = mockBooking.movieTitle;
-            document.getElementById('movieGenre').textContent = mockBooking.movieGenre;
-            document.getElementById('movieDuration').textContent = mockBooking.movieDuration;
-            document.getElementById('theaterName').textContent = mockBooking.theaterName;
-            document.getElementById('screenName').textContent = mockBooking.screenName;
-            document.getElementById('showDateTime').textContent = mockBooking.showDateTime;
-            document.getElementById('seatNumbers').textContent = mockBooking.seatNumbers;
-            document.getElementById('ticketPrice').textContent = mockBooking.ticketPrice;
-            document.getElementById('bookingFee').textContent = mockBooking.bookingFee;
-            document.getElementById('taxAmount').textContent = mockBooking.taxAmount;
-            document.getElementById('totalAmount').textContent = mockBooking.totalAmount;
-            document.getElementById('paymentMethod').textContent = mockBooking.paymentMethod;
-        }
 
         // Download ticket function
         function downloadTicket() {
@@ -314,9 +276,17 @@
             );
         }
 
-        // Load booking details when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadBookingDetails();
+            // Show success notification
+            if (window.notificationSystem) {
+                window.notificationSystem.success(
+                    'Your movie tickets have been successfully booked! Enjoy your show!',
+                    {
+                        title: 'Booking Confirmed! 🎬',
+                        duration: 5000
+                    }
+                );
+            }
         });
     </script>
 </body>

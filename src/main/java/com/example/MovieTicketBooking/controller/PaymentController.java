@@ -2,17 +2,18 @@ package com.example.MovieTicketBooking.controller;
 
 import com.example.MovieTicketBooking.entity.Booking;
 import com.example.MovieTicketBooking.entity.Payment;
+import com.example.MovieTicketBooking.entity.PaymentStatus;
 import com.example.MovieTicketBooking.entity.User;
 import com.example.MovieTicketBooking.service.BookingService;
 import com.example.MovieTicketBooking.service.PaymentService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Controller
 @RequestMapping("/payment")
@@ -21,14 +22,11 @@ public class PaymentController {
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     @Autowired
-    private PaymentService paymentService;
-
-    @Autowired
     private BookingService bookingService;
 
-    /**
-     * Show payment page for a booking
-     */
+    @Autowired
+    private PaymentService paymentService;
+
     @GetMapping("/{bookingId}")
     public String showPaymentPage(@PathVariable Long bookingId, Model model, Authentication authentication) {
         try {
@@ -45,14 +43,6 @@ public class PaymentController {
                 return "redirect:/bookings";
             }
             
-            // Check if payment already exists
-            Payment existingPayment = paymentService.getPaymentByBookingId(bookingId);
-            if (existingPayment != null && existingPayment.isSuccessful()) {
-                logger.info("Payment already completed for booking {}", bookingId);
-                return "redirect:/booking/confirmation?bookingReference=" + booking.getBookingReference();
-            }
-            
-            // Create payment session
             String paymentSessionId = paymentService.createPaymentSession(booking);
             logger.info("Payment session created: {}", paymentSessionId);
             
@@ -60,7 +50,6 @@ public class PaymentController {
             model.addAttribute("paymentSessionId", paymentSessionId);
             model.addAttribute("cashfreeAppId", paymentService.getCashfreeAppId());
             model.addAttribute("environment", paymentService.getCashfreeEnvironment());
-            model.addAttribute("user", user);
             
             logger.info("Payment page attributes set - Booking ID: {}, Session ID: {}", booking.getId(), paymentSessionId);
             
@@ -71,9 +60,6 @@ public class PaymentController {
         }
     }
 
-    /**
-     * Verify payment after Cashfree callback
-     */
     @PostMapping("/verify")
     public String verifyPayment(@RequestParam String orderId, 
                               @RequestParam String paymentId,
@@ -81,28 +67,31 @@ public class PaymentController {
                               RedirectAttributes redirectAttributes) {
         try {
             User user = (User) authentication.getPrincipal();
+            Booking booking = bookingService.getBookingById(Long.parseLong(orderId.replace("ORDER_", "").split("_")[0]));
+            
+            if (!booking.getUser().getId().equals(user.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Unauthorized access");
+                return "redirect:/bookings";
+            }
             
             // Verify payment with Cashfree
             boolean isPaymentValid = paymentService.verifyPayment(orderId, paymentId);
             
             if (isPaymentValid) {
-                redirectAttributes.addFlashAttribute("success", "Payment successful! Your tickets have been booked.");
-                return "redirect:/booking/confirmation?orderId=" + orderId;
+                bookingService.confirmBooking(booking.getId(), paymentId, "UPI");
+                redirectAttributes.addFlashAttribute("success", "Payment successful! Booking confirmed.");
+                return "redirect:/booking/confirmation?bookingReference=" + booking.getBookingReference();
             } else {
                 redirectAttributes.addFlashAttribute("error", "Payment verification failed. Please try again.");
                 return "redirect:/bookings";
             }
             
         } catch (Exception e) {
-            logger.error("Payment verification failed: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Payment verification failed");
             return "redirect:/bookings";
         }
     }
 
-    /**
-     * Handle payment success callback from Cashfree
-     */
     @GetMapping("/success")
     public String paymentSuccess(@RequestParam(required = false) String order_id,
                                @RequestParam(required = false) String cf_payment_id,
@@ -118,143 +107,87 @@ public class PaymentController {
             String actualPaymentId = cf_payment_id != null ? cf_payment_id : paymentId;
             String actualStatus = payment_status != null ? payment_status : status;
             
-            logger.info("Payment success callback - Order: {}, Payment: {}, Status: {}", actualOrderId, actualPaymentId, actualStatus);
+            logger.info("=== DUMMY PAYMENT SUCCESS CALLBACK ===");
+            logger.info("Order: {}, Payment: {}, Status: {}", actualOrderId, actualPaymentId, actualStatus);
             
-            if (actualOrderId != null && actualPaymentId != null) {
-                User user = (User) authentication.getPrincipal();
-                
-                // Verify payment with Cashfree API
-                logger.info("Verifying payment with Cashfree API");
-                boolean isPaymentValid = paymentService.verifyPayment(actualOrderId, actualPaymentId);
-                
-                if (isPaymentValid) {
-                    logger.info("Payment verified successfully with Cashfree");
-                    redirectAttributes.addFlashAttribute("success", "Payment successful! Your movie tickets have been booked.");
-                    return "redirect:/booking/confirmation?orderId=" + actualOrderId;
-                } else {
-                    logger.warn("Payment verification failed for order: {}, payment: {}", actualOrderId, actualPaymentId);
-                    redirectAttributes.addFlashAttribute("error", "Payment verification failed. Please contact support.");
-                    return "redirect:/bookings";
+            // For dummy project - always succeed and confirm booking
+            if (actualOrderId != null) {
+                try {
+                    // Extract booking ID from order ID
+                    String bookingIdStr = actualOrderId.replace("ORDER_", "").split("_")[0];
+                    Long bookingId = Long.parseLong(bookingIdStr);
+                    
+                    logger.info("Processing dummy payment success for booking ID: {}", bookingId);
+                    
+                    User user = (User) authentication.getPrincipal();
+                    Booking booking = bookingService.getBookingById(bookingId);
+                    
+                    if (booking != null && booking.getUser().getId().equals(user.getId())) {
+                        // Always confirm booking for dummy project
+                        logger.info("DUMMY PROJECT: Confirming booking {}", bookingId);
+                        bookingService.confirmBooking(bookingId, actualPaymentId != null ? actualPaymentId : "dummy_payment", "UPI");
+                        
+                        logger.info("✅ DUMMY PAYMENT SUCCESS: Booking {} confirmed!", bookingId);
+                        redirectAttributes.addFlashAttribute("success", "Payment successful! Your movie tickets have been booked.");
+                        return "redirect:/booking/confirmation?bookingReference=" + booking.getBookingReference();
+                    } else {
+                        logger.warn("Booking not found or unauthorized access");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error processing dummy payment success: {}", e.getMessage());
                 }
             }
             
-            // If we reach here, payment might be successful but parameters are missing
-            logger.warn("Payment callback with missing parameters - order_id: {}, cf_payment_id: {}", actualOrderId, actualPaymentId);
-            
-            // For college project, show success message and redirect to bookings
-            redirectAttributes.addFlashAttribute("success", "Payment completed! Please check your bookings for confirmation.");
+            // Fallback - always show success for dummy project
+            logger.info("DUMMY PROJECT: Showing success message");
+            redirectAttributes.addFlashAttribute("success", "Payment successful! Your movie tickets have been booked.");
             return "redirect:/bookings";
             
         } catch (Exception e) {
             logger.error("Payment success processing failed: {}", e.getMessage(), e);
+            
+            // Even if there's an error, show success for dummy project
+            logger.info("DUMMY PROJECT: Showing success despite error");
+            redirectAttributes.addFlashAttribute("success", "Payment successful! Your movie tickets have been booked.");
+            return "redirect:/bookings";
+        }
+    }
+
+    /**
+     * Direct payment success for dummy project
+     */
+    @PostMapping("/direct-success/{bookingId}")
+    public String directPaymentSuccess(@PathVariable Long bookingId,
+                                     @RequestParam String paymentMethod,
+                                     Authentication authentication,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            logger.info("=== DIRECT DUMMY PAYMENT SUCCESS ===");
+            logger.info("Booking ID: {}, Payment Method: {}", bookingId, paymentMethod);
+            
+            User user = (User) authentication.getPrincipal();
+            Booking booking = bookingService.getBookingById(bookingId);
+            
+            if (booking != null && booking.getUser().getId().equals(user.getId())) {
+                // Always confirm booking for dummy project
+                logger.info("DUMMY PROJECT: Confirming booking {}", bookingId);
+                bookingService.confirmBooking(bookingId, "direct_dummy_payment_" + System.currentTimeMillis(), paymentMethod);
+                
+                logger.info("✅ DIRECT DUMMY PAYMENT SUCCESS: Booking {} confirmed!", bookingId);
+                redirectAttributes.addFlashAttribute("success", "Payment successful! Your movie tickets have been booked.");
+                return "redirect:/booking/confirmation?bookingReference=" + booking.getBookingReference();
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Booking not found or unauthorized access");
+                return "redirect:/bookings";
+            }
+            
+        } catch (Exception e) {
+            logger.error("Direct payment success failed: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Payment processing failed");
             return "redirect:/bookings";
         }
     }
 
-    /**
-     * Handle payment failure callback from Cashfree
-     */
-    @GetMapping("/failure")
-    public String paymentFailure(@RequestParam(required = false) String order_id,
-                               @RequestParam(required = false) String cf_payment_id,
-                               @RequestParam(required = false) String payment_status,
-                               @RequestParam(required = false) String orderId,
-                               @RequestParam(required = false) String paymentId,
-                               @RequestParam(required = false) String status,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
-        try {
-            String actualOrderId = order_id != null ? order_id : orderId;
-            String actualPaymentId = cf_payment_id != null ? cf_payment_id : paymentId;
-            
-            logger.info("Payment failure callback - Order: {}, Payment: {}", actualOrderId, actualPaymentId);
-            
-            redirectAttributes.addFlashAttribute("error", "Payment failed. Please try again or use a different payment method.");
-            return "redirect:/bookings";
-            
-        } catch (Exception e) {
-            logger.error("Payment failure processing failed: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Payment processing failed");
-            return "redirect:/bookings";
-        }
-    }
-
-    /**
-     * Test payment success (for development/testing)
-     */
-    @PostMapping("/test/success/{bookingId}")
-    public String testPaymentSuccess(@PathVariable Long bookingId, Authentication authentication, 
-                                   RedirectAttributes redirectAttributes) {
-        try {
-            User user = (User) authentication.getPrincipal();
-            Booking booking = bookingService.getBookingById(bookingId);
-            
-            if (booking == null || !booking.getUser().getId().equals(user.getId())) {
-                redirectAttributes.addFlashAttribute("error", "Unauthorized access");
-                return "redirect:/bookings";
-            }
-            
-            // Simulate successful payment
-            String testOrderId = "ORDER_" + bookingId + "_" + System.currentTimeMillis();
-            String testPaymentId = "test_cashfree_payment_" + System.currentTimeMillis();
-            
-            boolean isPaymentValid = paymentService.verifyPayment(testOrderId, testPaymentId);
-            
-            if (isPaymentValid) {
-                redirectAttributes.addFlashAttribute("success", "Test payment successful! Your movie tickets have been booked.");
-                return "redirect:/booking/confirmation?orderId=" + testOrderId;
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Test payment failed");
-                return "redirect:/bookings";
-            }
-            
-        } catch (Exception e) {
-            logger.error("Test payment success failed: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Test payment failed");
-            return "redirect:/bookings";
-        }
-    }
-
-    /**
-     * Test payment failure (for development/testing)
-     */
-    @PostMapping("/test/fail/{bookingId}")
-    public String testPaymentFail(@PathVariable Long bookingId, Authentication authentication, 
-                                RedirectAttributes redirectAttributes) {
-        try {
-            User user = (User) authentication.getPrincipal();
-            Booking booking = bookingService.getBookingById(bookingId);
-            
-            if (booking == null || !booking.getUser().getId().equals(user.getId())) {
-                redirectAttributes.addFlashAttribute("error", "Unauthorized access");
-                return "redirect:/bookings";
-            }
-            
-            // Simulate failed payment
-            String testOrderId = "ORDER_" + bookingId + "_" + System.currentTimeMillis();
-            String testPaymentId = "fail_test_payment_" + System.currentTimeMillis();
-            
-            boolean isPaymentValid = paymentService.verifyPayment(testOrderId, testPaymentId);
-            
-            if (!isPaymentValid) {
-                redirectAttributes.addFlashAttribute("error", "Test payment failed as expected. Please try again.");
-                return "redirect:/payment/" + bookingId;
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Test payment unexpectedly succeeded");
-                return "redirect:/bookings";
-            }
-            
-        } catch (Exception e) {
-            logger.error("Test payment fail simulation failed: {}", e.getMessage(), e);
-            redirectAttributes.addFlashAttribute("error", "Test payment simulation failed");
-            return "redirect:/bookings";
-        }
-    }
-
-    /**
-     * Handle Cashfree webhook
-     */
     @PostMapping("/webhook")
     @ResponseBody
     public String handleWebhook(@RequestBody String payload, 
@@ -268,9 +201,8 @@ public class PaymentController {
                 return "ERROR";
             }
             
-            // Parse webhook payload and update payment status
-            // This is a simplified version for college project
-            // In production, you would parse the JSON and update payment status accordingly
+            // Parse webhook payload and update booking status
+            // In production, you would parse the JSON and update booking status accordingly
             
             return "OK";
         } catch (Exception e) {

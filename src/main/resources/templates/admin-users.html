@@ -89,7 +89,7 @@
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-2 w-48 rounded-lg py-1">
+                        <div id="userMenu" class="hidden dropdown-menu right-0 mt-1 w-48 rounded-lg py-1" style="position: absolute; z-index: 99999; background: #2A2A2A; border: 1px solid #374151; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Admin Dashboard</a>
                             <a href="/admin/movies" class="block px-4 py-2 text-sm text-gray-300 hover:bg-bms-light-gray hover:text-white transition-colors">Movie Management</a>
                             <a href="/admin/users" class="block px-4 py-2 text-sm text-bms-red hover:bg-bms-light-gray hover:text-white transition-colors">User Management</a>
@@ -110,7 +110,6 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
@@ -283,7 +282,6 @@
             } catch (error) {
                 console.error('Error loading users:', error);
                 
-                // Show detailed error message
                 const tbody = document.getElementById('usersTableBody');
                 tbody.innerHTML = `
                     <tr>
@@ -452,14 +450,11 @@
                     window.notificationSystem.info(message);
                 }
             } else {
-                // Fallback to alert if notification system is not available
                 alert(message);
             }
         }
 
         function editUser(userId) {
-            console.log('Edit user called with ID:', userId);
-            console.log('Available users:', users);
             
             const user = users.find(u => u.id == userId);
             if (!user) {
