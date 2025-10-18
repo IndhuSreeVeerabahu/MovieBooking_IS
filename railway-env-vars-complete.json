@@ -1,0 +1,17 @@
+{
+  "DATABASE_URL": "postgresql://postgres:nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk@shortline.proxy.rlwy.net:54041/railway",
+  "DB_USERNAME": "postgres",
+  "DB_PASSWORD": "nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk",
+  "JWT_SECRET": "MovieHub2024!SecureJWTKey#RailwayDeploy$SpringBoot3&PostgreSQL@IndhuSree",
+  "BASE_URL": "https://moviebooking-is-production.up.railway.app",
+  "CORS_ORIGINS": "https://moviebooking-is-production.up.railway.app",
+  "SPRING_PROFILES_ACTIVE": "prod",
+  "MAIL_USERNAME": "moviehub.notifications@gmail.com",
+  "MAIL_PASSWORD": "your-gmail-app-password-here",
+  "MAIL_HOST": "smtp.gmail.com",
+  "MAIL_PORT": "587",
+  "MAIL_FROM": "noreply@moviehub.com",
+  "CASHFREE_APP_ID": "TEST108283821957fe1153788f32479528382801",
+  "CASHFREE_SECRET_KEY": "cfsk_ma_test_dddc2fa7d13c09a0a5f0c9c88f26f678_f1e97d01",
+  "CASHFREE_ENVIRONMENT": "SANDBOX"
+}
