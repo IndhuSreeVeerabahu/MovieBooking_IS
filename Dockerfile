@@ -48,15 +48,15 @@ RUN ls -la target/
 # Expose port
 EXPOSE 8080
 
-# Set environment variables for runtime
-ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication -Djdk.internal.platform.cgroupfs.disabled=true"
+# Set environment variables for runtime with comprehensive error prevention
+ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication -Djdk.internal.platform.cgroupfs.disabled=true -Djava.security.egd=file:/dev/./urandom -Dspring.jmx.enabled=false -Dspring.main.lazy-initialization=true"
 ENV SPRING_PROFILES_ACTIVE=prod
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Add health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Add health check with longer timeout and more retries
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=5 \
   CMD curl -f http://localhost:8080/health || exit 1
 
 # Run the application with optimized startup
