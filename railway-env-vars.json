@@ -1,0 +1,17 @@
+{
+  "DATABASE_URL": "postgresql://postgres:nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk@shortline.proxy.rlwy.net:54041/railway",
+  "DB_USERNAME": "postgres",
+  "DB_PASSWORD": "nUAJpNeuIrnmvYTgbprTkXkMRNppMYEk",
+  "JWT_SECRET": "your-super-secret-jwt-key-at-least-32-characters-long-for-security",
+  "BASE_URL": "https://your-app-name.railway.app",
+  "CORS_ORIGINS": "https://your-app-name.railway.app",
+  "SPRING_PROFILES_ACTIVE": "prod",
+  "MAIL_USERNAME": "your-email@gmail.com",
+  "MAIL_PASSWORD": "your-app-password",
+  "MAIL_HOST": "smtp.gmail.com",
+  "MAIL_PORT": "587",
+  "MAIL_FROM": "noreply@moviehub.com",
+  "CASHFREE_APP_ID": "your-cashfree-app-id",
+  "CASHFREE_SECRET_KEY": "your-cashfree-secret-key",
+  "CASHFREE_ENVIRONMENT": "SANDBOX"
+}
