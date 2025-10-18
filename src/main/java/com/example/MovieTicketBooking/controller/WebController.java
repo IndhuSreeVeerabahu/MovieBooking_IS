@@ -143,14 +143,6 @@ public class WebController {
     }
     
     
-    /**
-     * Health check endpoint
-     */
-    @GetMapping("/health")
-    public String healthCheck() {
-        log.info("Health check requested");
-        return "Application is healthy!";
-    }
     
     /**
      * Debug endpoint to test database connection

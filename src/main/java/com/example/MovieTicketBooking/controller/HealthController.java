@@ -21,8 +21,8 @@ public class HealthController {
         return ResponseEntity.ok(health);
     }
 
-    @GetMapping("/")
-    public ResponseEntity<Map<String, Object>> root() {
+    @GetMapping("/api/status")
+    public ResponseEntity<Map<String, Object>> status() {
         Map<String, Object> info = new HashMap<>();
         info.put("message", "Movie Ticket Booking System API");
         info.put("status", "UP");
